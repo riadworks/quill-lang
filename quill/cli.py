@@ -16,8 +16,12 @@ def run_source(source: str, interp: Interpreter, env: Environment):
 
 
 def run_file(path: str) -> int:
-    with open(path, "r", encoding="utf-8") as f:
-        source = f.read()
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            source = f.read()
+    except OSError as exc:
+        print(f"Error: cannot open '{path}': {exc.strerror}", file=sys.stderr)
+        return 1
 
     env = build_globals()
     interp = Interpreter(env)
