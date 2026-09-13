@@ -97,10 +97,19 @@ def _l_push(lst, args, line):
 
 
 def _l_pop(lst, args, line):
-    _arity("pop", args, line, 0)
+    _arity("pop", args, line, 0, 1)
     if not lst:
         raise RuntimeErr("pop() on an empty list", line)
-    return lst.pop()
+    if not args:
+        return lst.pop()
+    index = args[0]
+    if not isinstance(index, int) or isinstance(index, bool):
+        raise RuntimeErr(f"pop() index must be a number, got {type_name(index)}", line)
+    if index < 0:
+        index += len(lst)
+    if not (0 <= index < len(lst)):
+        raise RuntimeErr("pop() index out of range", line)
+    return lst.pop(index)
 
 
 def _l_reverse(lst, args, line):

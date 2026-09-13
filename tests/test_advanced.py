@@ -245,3 +245,23 @@ def test_import_module(tmp_path):
 def test_single_line_block_form():
     out = run("let x = 5\nif x > 0: print(\"positive\")\nelse: print(\"non-positive\")\n")
     assert out == "positive\n"
+
+
+def test_list_pop_with_index():
+    out = run('let xs = [10, 20, 30]\nprint(xs.pop(0))\nprint(xs)\nprint(xs.pop(-1))\nprint(xs)\n')
+    assert out == "10\n[20, 30]\n30\n[20]\n"
+
+
+def test_list_pop_index_out_of_range_error():
+    msg = run_expect_error("let xs = [1, 2]\nxs.pop(5)\n")
+    assert "out of range" in msg
+
+
+def test_input_strips_leading_bom(monkeypatch):
+    # Some Windows terminals/pipes (e.g. PowerShell piping a here-string into
+    # stdin) prepend a UTF-8 BOM to the very first line of input, which would
+    # otherwise silently break the first input()-based == comparison in any
+    # interactive program - found while building and testing apps/tasks.
+    monkeypatch.setattr("builtins.input", lambda prompt="": "﻿1")
+    out = run('let choice = input("> ")\nprint(choice == "1")\n')
+    assert out == "true\n"

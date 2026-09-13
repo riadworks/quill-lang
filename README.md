@@ -162,7 +162,7 @@ Paths are resolved relative to the importing file.
   `.ends_with(s)` `.find(s)` `.repeat(n)` `.title()`
 - `true` / `false` / `nil`
 - Lists: `[1, 2, 3]`, indexed with `xs[0]`/`xs[-1]`, with methods:
-  `.push(x)` `.pop()` `.sort()` `.reverse()` `.contains(x)` `.index_of(x)`
+  `.push(x)` `.pop()`/`.pop(i)` `.sort()` `.reverse()` `.contains(x)` `.index_of(x)`
   `.join(sep)` `.map(f)` `.filter(f)` `.reduce(f, init)` (`.sort()` and
   `.reverse()` return a new list rather than mutating, matching the
   standalone `sorted()`)
@@ -205,8 +205,30 @@ quill/
   cli.py            # `quill script.ql` / `quill` REPL
 examples/           # hello, fib, closures, collections, fizzbuzz, classes,
                      # exceptions, methods_and_ops, mathutils + import_demo
-tests/              # 49 tests across the lexer and interpreter end-to-end
+apps/tasks/         # a real small app, not just a demo script - see below
+tests/              # 52 tests across the lexer and interpreter end-to-end
 ```
+
+## A real app, not just demo scripts
+
+[`apps/tasks/`](apps/tasks/) is a small interactive, persistent task manager
+written entirely in Quill:
+
+```powershell
+cd apps\tasks
+quill main.ql
+```
+
+It's the thing that actually proved classes, modules, file I/O, and
+exceptions work together, not just individually in isolated examples -
+testing it interactively (piping a full scripted menu session into `quill`
+rather than only running non-interactive scripts) found a real bug: PowerShell
+prepends a UTF-8 BOM to piped stdin, which was landing on the first
+`input()` call of any session and silently breaking its first `==`
+comparison. Fixed in the `input()` builtin itself. `list.pop()` also gained
+an optional index argument (`xs.pop(i)`) because removing a task by number
+needed it and the language didn't have it yet. See
+[`apps/tasks/README.md`](apps/tasks/README.md) for the details.
 
 Every feature described above was actually run through the interpreter while
 building it, not just written and assumed to work. That process caught two

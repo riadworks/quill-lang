@@ -78,9 +78,13 @@ def build_globals() -> Environment:
         _arity("input", args, line, 0, 1)
         prompt = quill_str(args[0]) if args else ""
         try:
-            return input(prompt)
+            result = input(prompt)
         except EOFError:
             return ""
+        # some Windows terminals/pipes (e.g. PowerShell piping a here-string into
+        # stdin) prepend a UTF-8 BOM to the very first line - strip it so the
+        # first input() call in a session doesn't silently fail an == comparison.
+        return result.lstrip("﻿")
 
     def b_push(args, line):
         _arity("push", args, line, 2)
@@ -89,11 +93,11 @@ def build_globals() -> Environment:
         return None
 
     def b_pop(args, line):
-        _arity("pop", args, line, 1)
+        from quill.methods import _l_pop
+
+        _arity("pop", args, line, 1, 2)
         lst = _require_list("pop", args[0], line)
-        if not lst:
-            raise RuntimeErr("pop() on an empty list", line)
-        return lst.pop()
+        return _l_pop(lst, args[1:], line)
 
     def b_keys(args, line):
         _arity("keys", args, line, 1)
