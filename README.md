@@ -205,11 +205,12 @@ quill/
   cli.py            # `quill script.ql` / `quill` REPL
 examples/           # hello, fib, closures, collections, fizzbuzz, classes,
                      # exceptions, methods_and_ops, mathutils + import_demo
-apps/tasks/         # a real small app, not just a demo script - see below
-tests/              # 52 tests across the lexer and interpreter end-to-end
+apps/tasks/         # a real CLI app, not just a demo script - see below
+apps/website/       # the same app, but as an actual website
+tests/              # 55 tests across the lexer and interpreter end-to-end
 ```
 
-## A real app, not just demo scripts
+## Real apps, not just demo scripts
 
 [`apps/tasks/`](apps/tasks/) is a small interactive, persistent task manager
 written entirely in Quill:
@@ -229,6 +230,22 @@ comparison. Fixed in the `input()` builtin itself. `list.pop()` also gained
 an optional index argument (`xs.pop(i)`) because removing a task by number
 needed it and the language didn't have it yet. See
 [`apps/tasks/README.md`](apps/tasks/README.md) for the details.
+
+[`apps/website/`](apps/website/) is the same task manager as an actual
+website instead of a terminal app:
+
+```powershell
+cd apps\website
+quill site.ql
+```
+then open `http://127.0.0.1:8080/` in a browser. This needed a real language
+addition first - Quill had no networking at all - so it now has a
+`serve(port, handler)` builtin (Python's `http.server` underneath, a plain
+Quill function on top). Building the page's embedded CSS also exposed a
+real gap: f-strings had no way to write a literal `{` or `}` at all, so
+every CSS rule was being misread as an interpolation. Fixed with real
+brace-escaping (`{{`/`}}`, matching Python's own f-string convention) -
+see [`apps/website/README.md`](apps/website/README.md).
 
 Every feature described above was actually run through the interpreter while
 building it, not just written and assumed to work. That process caught two

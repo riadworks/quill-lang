@@ -241,6 +241,23 @@ def build_globals() -> Environment:
         _arity("file_exists", args, line, 1)
         return os.path.isfile(args[0])
 
+    def b_serve(args, line):
+        from quill.interpreter import CURRENT_INTERPRETER
+        from quill.webserver import serve as run_server
+
+        _arity("serve", args, line, 2)
+        port, handler = args
+        port = int(_require_number("serve", port, line))
+        interp = CURRENT_INTERPRETER[0]
+        run_server(port, handler, interp.call)
+        return None
+
+    def b_url_encode(args, line):
+        import urllib.parse
+
+        _arity("url_encode", args, line, 1)
+        return urllib.parse.quote(quill_str(args[0]))
+
     reg("print", b_print)
     reg("len", b_len)
     reg("type", b_type)
@@ -270,6 +287,8 @@ def build_globals() -> Environment:
     reg("read_file", b_read_file)
     reg("write_file", b_write_file)
     reg("file_exists", b_file_exists)
+    reg("serve", b_serve)
+    reg("url_encode", b_url_encode)
     env.declare("PI", 3.141592653589793)
 
     return env

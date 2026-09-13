@@ -238,6 +238,12 @@ class Lexer:
                 buf.append({"n": "\n", "t": "\t", '"': '"', "\\": "\\", "{": "{"}.get(esc, esc))
                 continue
             if c == "{" and interpolate:
+                if self.peek(1) == "{":
+                    # {{ -> a literal brace, same escape convention as Python f-strings
+                    self.advance()
+                    self.advance()
+                    buf.append("{")
+                    continue
                 parts.append(("lit", "".join(buf)))
                 buf = []
                 self.advance()
@@ -257,6 +263,13 @@ class Lexer:
                     expr_chars.append(self.advance())
                 parts.append(("expr", "".join(expr_chars)))
                 continue
+            if c == "}" and interpolate:
+                if self.peek(1) == "}":
+                    self.advance()
+                    self.advance()
+                    buf.append("}")
+                    continue
+                self.error("single '}' is not allowed in an f-string (use '}}' for a literal brace)")
             buf.append(self.advance())
         parts.append(("lit", "".join(buf)))
         self.tokens.append(Token(T.STRING, parts, line, col))

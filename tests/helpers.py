@@ -21,12 +21,12 @@ def run(source: str) -> str:
 
 
 def run_expect_error(source: str) -> str:
-    """Run source, expect a QuillError, return its message."""
-    env = build_globals()
-    interp = Interpreter(env)
-    tokens = tokenize(source)
-    program = parse(tokens)
+    """Run source, expect a QuillError (from lexing, parsing, or execution), return its message."""
     try:
+        tokens = tokenize(source)
+        program = parse(tokens)
+        env = build_globals()
+        interp = Interpreter(env)
         interp.run(program)
     except QuillError as exc:
         return str(exc)

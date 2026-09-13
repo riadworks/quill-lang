@@ -1,6 +1,8 @@
 .venv/
+build/
 __pycache__/
 *.pyc
 *.egg-info/
 .pytest_cache/
 apps/tasks/tasks.txt
+apps/website/tasks.txt

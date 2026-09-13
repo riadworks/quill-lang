@@ -257,6 +257,24 @@ def test_list_pop_index_out_of_range_error():
     assert "out of range" in msg
 
 
+def test_fstring_escaped_braces():
+    # {{ and }} must produce literal braces without triggering interpolation -
+    # found missing while generating CSS (e.g. "body {{ color: red }}") inside
+    # an f-string for the website app; a real gap, not just that app's problem.
+    out = run('let x = 5\nprint(f"{{literal}} and {x} and {{another}}")\n')
+    assert out == "{literal} and 5 and {another}\n"
+
+
+def test_fstring_lone_closing_brace_is_an_error():
+    msg = run_expect_error('print(f"oops }")\n')
+    assert "single" in msg and "}" in msg
+
+
+def test_plain_string_still_allows_unescaped_braces():
+    out = run('print("a { b } c")\n')
+    assert out == "a { b } c\n"
+
+
 def test_input_strips_leading_bom(monkeypatch):
     # Some Windows terminals/pipes (e.g. PowerShell piping a here-string into
     # stdin) prepend a UTF-8 BOM to the very first line of input, which would
