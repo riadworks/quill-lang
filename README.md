@@ -1,9 +1,9 @@
 # Quill
 
-A general-purpose scripting language: classes with inheritance, exceptions,
-closures, a module system, and a real standard library — not a toy anymore.
-Python-style indentation, dynamically typed, built in Python as a
-tree-walking interpreter.
+A general-purpose scripting language with classes and inheritance, exceptions,
+closures, a module system, and a real standard library. Python-style
+indentation, dynamically typed, built in Python as a tree-walking
+interpreter.
 
 The name's a placeholder — trivial to rename later (it's just the string
 `"quill"` in `pyproject.toml` and the `quill/` package directory).
@@ -109,9 +109,9 @@ print(rex.speak())    # Rex the Labrador barks
 print(type(rex))      # Dog
 ```
 
-Single inheritance, `super.method(...)` calls the parent's version (works
-correctly through arbitrarily deep chains, not just one level). No `self`
-parameter to declare — it's bound automatically inside methods.
+Single inheritance. `super.method(...)` calls the parent's version and
+resolves correctly through arbitrarily deep chains. No `self` parameter to
+declare; it's bound automatically inside methods.
 
 ### Exceptions
 
@@ -231,7 +231,7 @@ quill/
   cli.py            # `quill script.ql` / `quill` REPL
 examples/           # hello, fib, closures, collections, fizzbuzz, classes,
                      # exceptions, methods_and_ops, mathutils + import_demo
-apps/tasks/         # a real CLI app, not just a demo script - see below
+apps/tasks/         # a real CLI app, built to prove the language - see below
 apps/website/       # the same app, but as an actual website
 apps/guess_game/    # number-guessing game, CLI
 apps/password_gen/  # password generator, CLI
@@ -240,7 +240,7 @@ apps/shortener/     # URL shortener, website
 tests/              # 80 tests across the lexer and interpreter end-to-end
 ```
 
-## Real apps, not just demo scripts
+## Real apps
 
 [`apps/tasks/`](apps/tasks/) is a small interactive, persistent task manager
 written entirely in Quill:
@@ -250,12 +250,12 @@ cd apps\tasks
 quill main.ql
 ```
 
-It's the thing that actually proved classes, modules, file I/O, and
-exceptions work together, not just individually in isolated examples -
-testing it interactively (piping a full scripted menu session into `quill`
-rather than only running non-interactive scripts) found a real bug: PowerShell
-prepends a UTF-8 BOM to piped stdin, which was landing on the first
-`input()` call of any session and silently breaking its first `==`
+It's what proved classes, modules, file I/O, and exceptions actually hold
+together in a real program instead of six separate isolated examples.
+Testing it interactively - piping a full scripted menu session into `quill`
+instead of only running scripts non-interactively - found a real bug:
+PowerShell prepends a UTF-8 BOM to piped stdin, and it was landing on the
+first `input()` call of any session and silently breaking its first `==`
 comparison. Fixed in the `input()` builtin itself. `list.pop()` also gained
 an optional index argument (`xs.pop(i)`) because removing a task by number
 needed it and the language didn't have it yet. See
@@ -268,52 +268,50 @@ website instead of a terminal app:
 cd apps\website
 quill site.ql
 ```
-then open `http://127.0.0.1:8080/` in a browser. This needed a real language
-addition first - Quill had no networking at all - so it now has a
-`serve(port, handler)` builtin (Python's `http.server` underneath, a plain
-Quill function on top). Building the page's embedded CSS also exposed a
-real gap: f-strings had no way to write a literal `{` or `}` at all, so
-every CSS rule was being misread as an interpolation. Fixed with real
-brace-escaping (`{{`/`}}`, matching Python's own f-string convention).
+then open `http://127.0.0.1:8080/` in a browser. Quill had no networking at
+all before this, so it now has a `serve(port, handler)` builtin (Python's
+`http.server` underneath, a plain Quill function on top). Building the
+page's embedded CSS also exposed a real gap: f-strings had no way to write a
+literal `{` or `}`, so every CSS rule was getting misread as an
+interpolation. Fixed with real brace-escaping (`{{`/`}}`, matching Python's
+own f-string convention).
 
 It also has a `GET /api/tasks` JSON endpoint and a `POST /api/wipe` route
-gated by a hashed admin key (`sha256()`, comparing hashes rather than
-plaintext) - see [`apps/website/README.md`](apps/website/README.md) for
-both.
+gated by a hashed admin key - `sha256()`, comparing hashes rather than
+plaintext - see [`apps/website/README.md`](apps/website/README.md) for both.
 
 [`apps/guess_game/`](apps/guess_game/) and [`apps/password_gen/`](apps/password_gen/)
 are two short, self-contained CLI programs (`quill game.ql`, `quill gen.ql`)
-built to exercise `random`/`random_int`/`sha256` for real instead of just in
-isolated tests. The guess game found a real bug in its own design, not the
-language: piping a finite amount of input into a `while true` loop means
-`input()` eventually hits EOF and returns `""` forever, so a naive
-"keep asking until you get a number" loop spins forever once stdin runs dry.
-Fixed at the app level with a bad-guess counter that gives up after five
-consecutive unreadable answers, rather than changing what `input()` does at
-EOF (other apps rely on it returning `""`).
+that exercise `random`/`random_int`/`sha256` outside of a test harness. The
+guess game found a real bug in its own design: piping a finite amount of
+input into a `while true` loop means `input()` eventually hits EOF and
+returns `""` forever, so a naive "keep asking until you get a number" loop
+spins forever once stdin runs dry. Fixed at the app level with a bad-guess
+counter that gives up after five consecutive unreadable answers, without
+changing what `input()` does at EOF (other apps rely on it returning `""`).
 
 [`apps/adventure/`](apps/adventure/) is a small text-adventure (three rooms,
-one locked door, one item that ends the game) that leans on classes, maps as
-a room→exit graph, and comprehensions for filtering inventory and exits.
+one locked door, one item that ends the game) leaning on classes, maps as a
+room→exit graph, and comprehensions for filtering inventory and exits.
 Writing it surfaced a real lexer trap: Quill has no single-quote string
 syntax at all, so `xs.join(', ')` - easy to type out of Python habit - fails
 inside an f-string's `{...}`, because that interpolated fragment gets
-re-tokenized on its own and the bare `'` is unrecognized. The fix is using
-`"..."` there instead; a regression test locks it in.
+re-tokenized on its own and the bare `'` is unrecognized. Using `"..."`
+there instead fixes it; a regression test locks it in.
 
 [`apps/shortener/`](apps/shortener/) is a URL shortener website, the same
 shape as `apps/website/`: `POST /shorten` generates a random code and
 persists the mapping as JSON, `GET /<code>` redirects, `GET /api/links`
-returns the raw map. Tested against a live running instance, not just read
-over - shortened a real URL, followed the redirect, and confirmed an unknown
-code 404s instead of crashing the server.
+returns the raw map. Proved out against a live running instance rather than
+just read over on the page - shortened a real URL, followed the redirect,
+and confirmed an unknown code 404s instead of crashing the server.
 
-Every feature described above was actually run through the interpreter while
-building it, not just written and assumed to work. That process caught two
-real bugs worth knowing about if you're extending this: (1) a duplicated
-token-consumption bug in the class-body parser that broke every method
-definition, found by running the first classes example; (2) `raise`d
-exceptions not inheriting from the same base error class as everything else,
-which meant an uncaught `raise` would crash the CLI with a raw Python
-traceback instead of a clean message — found by deliberately testing that
-exact scenario rather than assuming the happy-path tests covered it.
+Every feature described above ran through the interpreter for real while it
+was being built. That process caught two real bugs worth knowing about if
+you're extending this: a duplicated token-consumption bug in the class-body
+parser that broke every method definition, found by running the first
+classes example, and `raise`d exceptions not inheriting from the same base
+error class as everything else, which meant an uncaught `raise` crashed the
+CLI with a raw Python traceback instead of a clean message. Both turned up
+by deliberately testing the exact scenario rather than assuming the
+happy-path tests covered it.

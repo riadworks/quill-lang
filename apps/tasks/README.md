@@ -1,7 +1,7 @@
 # Quill Tasks
 
-A small interactive, persistent task manager — a real (if simple)
-application written entirely in Quill, not just a language demo script.
+A small interactive, persistent task manager. A real (if simple) application
+written entirely in Quill.
 
 ```powershell
 cd apps\tasks
