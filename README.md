@@ -169,6 +169,13 @@ Paths are resolved relative to the importing file.
 - Maps: `{"key": "value"}`, indexed with `m["key"]` or `m.key`, with methods:
   `.keys()` `.values()` `.items()` `.has(k)` `.get(k, default)`
 - Ternary expression: `"big" if x > 5 else "small"`
+- Comprehensions: `[x * x for x in xs if x > 0]`, `{k: v.upper() for k, v in m.items()}`,
+  chaining multiple `for`/`if` clauses works the same as Python's does:
+  `[x + y for x in [1, 2] for y in [10, 20] if x != y]`
+- Destructuring: `let a, b = [1, 2]` unpacks a list into two new names; drop
+  `let` to reassign existing ones (`a, b = [b, a]` swaps them); and
+  `for k, v in m.items(): ...` unpacks each pair on every iteration instead
+  of indexing it apart by hand.
 
 ### Built-in functions
 
@@ -177,7 +184,7 @@ Paths are resolved relative to the importing file.
 `round`, `slice`, `sqrt`, `floor`, `ceil`, `enumerate`, `zip`, `read_file`,
 `write_file`, `file_exists`, `serve`, `url_encode`, `json_encode`,
 `json_decode`, `sha256`, `random`, `random_int`, `random_choice`, `shuffle`,
-`env_get`, plus the constant `PI`. (The older top-level `push`/`pop`/`keys`/etc.
+`env_get`, `http_get`, `http_post`, plus the constant `PI`. (The older top-level `push`/`pop`/`keys`/etc.
 and the newer `.push()`/`.pop()`/`.keys()` method forms both work and do the
 same thing — the methods are just nicer to chain.)
 
@@ -190,6 +197,13 @@ so passwords/API keys never need to be compared or stored as plaintext - see
 `random_int`/`random_choice`/`shuffle` and `env_get` (for reading
 config/secrets from the environment instead of hardcoding them) round out
 what a real backend needs.
+
+`http_get(url, [headers])` and `http_post(url, body, [headers])` are the
+outbound side of the same story `serve()` covers inbound - both return
+`{"status": ..., "body": ..., "headers": {...}}`, and both raise a clear
+`http_get()/http_post() failed: ...` error rather than a raw traceback when
+the host is unreachable. `http_post`'s `body` can be a map (form-encoded
+automatically, with `Content-Type` set to match) or a plain string.
 
 ## What's deliberately not here yet
 
@@ -219,7 +233,11 @@ examples/           # hello, fib, closures, collections, fizzbuzz, classes,
                      # exceptions, methods_and_ops, mathutils + import_demo
 apps/tasks/         # a real CLI app, not just a demo script - see below
 apps/website/       # the same app, but as an actual website
-tests/              # 64 tests across the lexer and interpreter end-to-end
+apps/guess_game/    # number-guessing game, CLI
+apps/password_gen/  # password generator, CLI
+apps/adventure/     # small text-adventure, CLI
+apps/shortener/     # URL shortener, website
+tests/              # 80 tests across the lexer and interpreter end-to-end
 ```
 
 ## Real apps, not just demo scripts
@@ -262,6 +280,33 @@ It also has a `GET /api/tasks` JSON endpoint and a `POST /api/wipe` route
 gated by a hashed admin key (`sha256()`, comparing hashes rather than
 plaintext) - see [`apps/website/README.md`](apps/website/README.md) for
 both.
+
+[`apps/guess_game/`](apps/guess_game/) and [`apps/password_gen/`](apps/password_gen/)
+are two short, self-contained CLI programs (`quill game.ql`, `quill gen.ql`)
+built to exercise `random`/`random_int`/`sha256` for real instead of just in
+isolated tests. The guess game found a real bug in its own design, not the
+language: piping a finite amount of input into a `while true` loop means
+`input()` eventually hits EOF and returns `""` forever, so a naive
+"keep asking until you get a number" loop spins forever once stdin runs dry.
+Fixed at the app level with a bad-guess counter that gives up after five
+consecutive unreadable answers, rather than changing what `input()` does at
+EOF (other apps rely on it returning `""`).
+
+[`apps/adventure/`](apps/adventure/) is a small text-adventure (three rooms,
+one locked door, one item that ends the game) that leans on classes, maps as
+a room→exit graph, and comprehensions for filtering inventory and exits.
+Writing it surfaced a real lexer trap: Quill has no single-quote string
+syntax at all, so `xs.join(', ')` - easy to type out of Python habit - fails
+inside an f-string's `{...}`, because that interpolated fragment gets
+re-tokenized on its own and the bare `'` is unrecognized. The fix is using
+`"..."` there instead; a regression test locks it in.
+
+[`apps/shortener/`](apps/shortener/) is a URL shortener website, the same
+shape as `apps/website/`: `POST /shorten` generates a random code and
+persists the mapping as JSON, `GET /<code>` redirects, `GET /api/links`
+returns the raw map. Tested against a live running instance, not just read
+over - shortened a real URL, followed the redirect, and confirmed an unknown
+code 404s instead of crashing the server.
 
 Every feature described above was actually run through the interpreter while
 building it, not just written and assumed to work. That process caught two
