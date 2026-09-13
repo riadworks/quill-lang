@@ -29,50 +29,62 @@ pull render_page(links):
 <head>
 <meta charset=\"utf-8\">
 <title>Quill Shortener</title>
+<link rel=\"preconnect\" href=\"https://fonts.googleapis.com\">
+<link rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin>
+<link href=\"https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap\" rel=\"stylesheet\">
 <style>
   :root {{
-    --bg: #0b0d10; --panel: #14171c; --border: #262b33;
-    --text: #e7e9ec; --dim: #8b93a0; --accent: #4f8cff; --accent2: #8b5cf6;
+    --ink-900: #14161d; --ink-800: #1c1f28; --ink-600: #343947;
+    --paper: #eef1ee; --brass: #c39a5c; --brass-bright: #ddb877; --oxblood: #b1555b;
+    --text: #e8eae6; --dim: #9aa0a6; --rule: rgba(238, 241, 238, 0.09);
+    --display: \"Fraunces\", Georgia, serif;
+    --body: \"IBM Plex Sans\", -apple-system, \"Segoe UI\", sans-serif;
+    --mono: \"IBM Plex Mono\", Consolas, monospace;
   }}
   * {{ box-sizing: border-box; }}
   body {{
-    margin: 0; min-height: 100vh; font-family: -apple-system, Segoe UI, sans-serif;
-    background: radial-gradient(900px 500px at 15% -10%, rgba(79,140,255,.16), transparent 60%),
-                radial-gradient(900px 600px at 100% 10%, rgba(139,92,246,.14), transparent 55%),
-                var(--bg);
-    color: var(--text); display: flex; justify-content: center; padding: 48px 20px;
+    margin: 0; min-height: 100vh; font-family: var(--body);
+    background: var(--ink-900); color: var(--text);
+    display: flex; justify-content: center; padding: 56px 20px;
   }}
-  .card {{
-    width: 100%; max-width: 620px; background: rgba(255,255,255,.03);
-    border: 1px solid var(--border); border-radius: 18px; padding: 28px 30px;
-    backdrop-filter: blur(16px);
+  .sheet {{
+    width: 100%; max-width: 620px; background: var(--ink-800);
+    border: 1px solid var(--ink-600); border-radius: 4px; padding: 34px 36px;
   }}
-  h1 {{ margin: 0 0 4px; font-size: 26px; font-weight: 800; }}
-  p.sub {{ margin: 0 0 24px; color: var(--dim); font-size: 14px; }}
-  ul {{ list-style: none; margin: 0 0 26px; padding: 0; display: flex; flex-direction: column; gap: 8px; }}
+  .eyebrow {{
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--brass-bright); margin: 0 0 14px; display: flex; align-items: center; gap: 8px;
+  }}
+  .eyebrow::before {{ content: \"\"; width: 14px; height: 1px; background: var(--brass-bright); }}
+  h1 {{ font-family: var(--display); margin: 0 0 4px; font-size: 27px; font-weight: 600; }}
+  p.sub {{ margin: 0 0 26px; color: var(--dim); font-size: 14px; }}
+  ul {{ list-style: none; margin: 0 0 28px; padding: 0; display: flex; flex-direction: column; }}
   li.row {{
-    display: flex; align-items: center; gap: 10px; padding: 10px 12px;
-    background: var(--panel); border: 1px solid var(--border); border-radius: 12px; font-size: 14px;
-    overflow: hidden;
+    display: flex; align-items: center; gap: 10px; padding: 12px 2px;
+    border-bottom: 1px solid var(--rule); font-size: 14px; overflow: hidden;
   }}
   li.empty {{ color: var(--dim); padding: 10px 2px; font-size: 14px; }}
-  .code {{ font-family: monospace; color: var(--accent); text-decoration: none; flex-shrink: 0; }}
+  .code {{ font-family: var(--mono); color: var(--brass-bright); text-decoration: none; flex-shrink: 0; }}
   .code:hover {{ text-decoration: underline; }}
   .arrow {{ color: var(--dim); flex-shrink: 0; }}
   .url {{ color: var(--dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }}
   form {{ display: flex; gap: 8px; flex-wrap: wrap; }}
   input {{
-    background: var(--panel); border: 1px solid var(--border); border-radius: 999px;
-    padding: 10px 16px; color: var(--text); font-size: 14px; flex: 1; min-width: 200px;
+    background: var(--ink-900); border: 1px solid var(--ink-600); border-radius: 3px;
+    padding: 10px 14px; color: var(--text); font-family: var(--body); font-size: 14px;
+    flex: 1; min-width: 200px;
   }}
+  input:focus {{ outline: none; border-color: var(--brass); }}
   button {{
-    border: none; border-radius: 999px; padding: 10px 20px; font-weight: 700; cursor: pointer;
-    background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #fff;
+    font-family: var(--body); border: 1px solid var(--brass); border-radius: 3px; padding: 10px 20px;
+    font-weight: 600; cursor: pointer; background: var(--brass); color: var(--ink-900);
   }}
+  button:hover {{ background: var(--brass-bright); border-color: var(--brass-bright); }}
 </style>
 </head>
 <body>
-  <div class=\"card\">
+  <div class=\"sheet\">
+    <p class=\"eyebrow\">Quill / shortener</p>
     <h1>Quill Shortener</h1>
     <p class=\"sub\">A URL shortener. Written in Quill. Served by Quill.</p>
     <ul>{rows}
