@@ -422,6 +422,17 @@ def test_http_get_unreachable_host_is_a_clear_error():
     assert "http_get() failed" in msg
 
 
+def test_fstring_interpolation_can_contain_a_double_quoted_string_argument():
+    # A real trap found while building apps/adventure: Quill has no single-quote
+    # strings, so writing xs.join(', ') (Python muscle memory) inside an
+    # f-string's {expr} produces a bare, unrecognized ' when that raw fragment
+    # is later re-tokenized on its own. The correct form - a double-quoted
+    # string *inside* the interpolation - must still work, since the { }
+    # extraction only tracks brace nesting and doesn't stop at quotes.
+    out = run('let xs = ["a", "b", "c"]\nprint(f"{xs.join(", ")}")\n')
+    assert out == "a, b, c\n"
+
+
 def test_destructuring_non_list_is_a_clear_error():
     msg = run_expect_error("let a, b = 5\n")
     assert "cannot unpack" in msg

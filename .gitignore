@@ -7,4 +7,5 @@ __pycache__/
 apps/tasks/tasks.txt
 apps/website/tasks.txt
 apps/guess_game/best_score.txt
+apps/shortener/links.txt
 .git-commit-msg.txt
