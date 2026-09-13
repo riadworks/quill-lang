@@ -6,3 +6,5 @@ __pycache__/
 .pytest_cache/
 apps/tasks/tasks.txt
 apps/website/tasks.txt
+apps/guess_game/best_score.txt
+.git-commit-msg.txt
