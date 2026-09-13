@@ -196,7 +196,7 @@ class Parser:
         methods = {}
         self.skip_newlines()
         while not self.check(T.DEDENT, T.EOF):
-            mtok = self.expect(T.FN, "only method definitions (fn ...) are allowed directly inside a class body")
+            mtok = self.expect(T.FN, "only method definitions (pull ...) are allowed directly inside a class body")
             mname = self.expect(T.NAME, "expected a method name").value
             params = self.parse_params()
             body = self.parse_block()

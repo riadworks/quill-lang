@@ -13,9 +13,9 @@ print(nums)
 print(nums.contains(8))
 print(nums.index_of(8))
 print(nums.sort())
-print(nums.map(fn(x): return x * x))
-print(nums.filter(fn(x): return x > 4))
-print(nums.reduce(fn(acc, x): return acc + x, 0))
+print(nums.map(pull(x): return x * x))
+print(nums.filter(pull(x): return x > 4))
+print(nums.reduce(pull(acc, x): return acc + x, 0))
 print([1, 2, 3].join("-"))
 
 let m = {"a": 1}

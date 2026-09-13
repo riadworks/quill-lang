@@ -39,12 +39,18 @@ def test_newlines_suppressed_inside_brackets():
     assert t.count(T.NEWLINE) == 1
 
 
-def test_string_interpolation_tokenizes_as_single_string_token():
-    tokens = tokenize('"hello {name}"\n')
+def test_fstring_interpolation_tokenizes_as_single_string_token():
+    tokens = tokenize('f"hello {name}"\n')
     assert tokens[0].type == T.STRING
     parts = tokens[0].value
     assert parts[0] == ("lit", "hello ")
     assert parts[1] == ("expr", "name")
+
+
+def test_plain_string_does_not_split_out_interpolation():
+    tokens = tokenize('"hello {name}"\n')
+    assert tokens[0].type == T.STRING
+    assert tokens[0].value == [("lit", "hello {name}")]
 
 
 def test_inconsistent_indentation_raises():

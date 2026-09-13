@@ -73,7 +73,7 @@ class T(Enum):
 
 KEYWORDS = {
     "let": T.LET,
-    "fn": T.FN,
+    "pull": T.FN,  # function-definition keyword; kept as the T.FN token type internally
     "if": T.IF,
     "elif": T.ELIF,
     "else": T.ELSE,

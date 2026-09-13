@@ -4,11 +4,11 @@ from tests.helpers import run, run_expect_error
 def test_class_basic_fields_and_methods():
     out = run(
         "class Point:\n"
-        "    fn init(x, y):\n"
+        "    pull init(x, y):\n"
         "        self.x = x\n"
         "        self.y = y\n"
-        "    fn to_string():\n"
-        '        return "({self.x}, {self.y})"\n'
+        "    pull to_string():\n"
+        '        return f"({self.x}, {self.y})"\n'
         "let p = Point(1, 2)\n"
         "print(p.x)\n"
         "print(p.to_string())\n"
@@ -19,16 +19,16 @@ def test_class_basic_fields_and_methods():
 def test_class_inheritance_and_super():
     out = run(
         "class Animal:\n"
-        "    fn init(name):\n"
+        "    pull init(name):\n"
         "        self.name = name\n"
-        "    fn speak():\n"
-        '        return "{self.name} makes a sound"\n'
+        "    pull speak():\n"
+        '        return f"{self.name} makes a sound"\n'
         "class Dog(Animal):\n"
-        "    fn init(name, breed):\n"
+        "    pull init(name, breed):\n"
         "        super.init(name)\n"
         "        self.breed = breed\n"
-        "    fn speak():\n"
-        '        return "{self.name} the {self.breed} barks"\n'
+        "    pull speak():\n"
+        '        return f"{self.name} the {self.breed} barks"\n'
         'let a = Animal("Creature")\n'
         'let d = Dog("Rex", "Lab")\n'
         "print(a.speak())\n"
@@ -44,13 +44,13 @@ def test_three_level_inheritance_super_chain():
     # chain loops instead of climbing to the top.
     out = run(
         "class A:\n"
-        "    fn tag():\n"
+        "    pull tag():\n"
         '        return "A"\n'
         "class B(A):\n"
-        "    fn tag():\n"
+        "    pull tag():\n"
         '        return super.tag() + "B"\n'
         "class C(B):\n"
-        "    fn tag():\n"
+        "    pull tag():\n"
         '        return super.tag() + "C"\n'
         "print(C().tag())\n"
     )
@@ -60,7 +60,7 @@ def test_three_level_inheritance_super_chain():
 def test_class_wrong_init_arity_error():
     msg = run_expect_error(
         "class Point:\n"
-        "    fn init(x, y):\n"
+        "    pull init(x, y):\n"
         "        self.x = x\n"
         "        self.y = y\n"
         "Point(1)\n"
@@ -71,7 +71,7 @@ def test_class_wrong_init_arity_error():
 def test_class_unknown_field_error():
     msg = run_expect_error(
         "class Point:\n"
-        "    fn init(x):\n"
+        "    pull init(x):\n"
         "        self.x = x\n"
         "let p = Point(1)\n"
         "print(p.y)\n"
@@ -80,7 +80,7 @@ def test_class_unknown_field_error():
 
 
 def test_try_except_catches_raise():
-    out = run('try:\n    raise "boom"\nexcept e:\n    print("caught {e}")\n')
+    out = run('try:\n    raise "boom"\nexcept e:\n    print(f"caught {e}")\n')
     assert out == "caught boom\n"
 
 
@@ -107,7 +107,7 @@ def test_try_finally_runs_on_success_and_failure():
 
 def test_try_finally_runs_before_return_propagates():
     out = run(
-        "fn f():\n"
+        "pull f():\n"
         "    try:\n"
         '        return "value"\n'
         "    finally:\n"
@@ -146,9 +146,9 @@ def test_list_methods():
         "print(xs.contains(2))\n"
         "print(xs.index_of(2))\n"
         'print(xs.join("-"))\n'
-        "print(xs.map(fn(x): return x + 1))\n"
-        "print(xs.filter(fn(x): return x > 1))\n"
-        "print(xs.reduce(fn(a, b): return a + b, 0))\n"
+        "print(xs.map(pull(x): return x + 1))\n"
+        "print(xs.filter(pull(x): return x > 1))\n"
+        "print(xs.reduce(pull(a, b): return a + b, 0))\n"
         "xs.push(99)\n"
         "print(xs)\n"
         "print(xs.pop())\n"
@@ -193,7 +193,7 @@ def test_math_builtins():
 
 def test_higher_order_via_list_map_matches_manual_loop():
     out = run(
-        "fn double(x):\n"
+        "pull double(x):\n"
         "    return x * 2\n"
         "print([1, 2, 3].map(double))\n"
     )
@@ -228,7 +228,7 @@ def test_import_module(tmp_path):
     from quill.lexer import tokenize
     from quill.parser import parse
 
-    (tmp_path / "mod.ql").write_text('let GREETING = "hi"\nfn shout(s):\n    return s.upper()\n', encoding="utf-8")
+    (tmp_path / "mod.ql").write_text('let GREETING = "hi"\npull shout(s):\n    return s.upper()\n', encoding="utf-8")
     main_source = 'import "mod.ql" as mod\nprint(mod.GREETING)\nprint(mod.shout("yo"))\n'
 
     env = build_globals()

@@ -21,7 +21,7 @@ class QuillFunction:
         self.owner_class = owner_class
 
     def __repr__(self):
-        return f"<fn {self.name or 'anonymous'}>"
+        return f"<pull {self.name or 'anonymous'}>"
 
 
 class BuiltinFunction:

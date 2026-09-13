@@ -2,8 +2,13 @@ from tests.helpers import run, run_expect_error
 
 
 def test_hello_world_and_interpolation():
-    out = run('let name = "world"\nprint("Hello, {name}!")\n')
+    out = run('let name = "world"\nprint(f"Hello, {name}!")\n')
     assert out == "Hello, world!\n"
+
+
+def test_plain_string_does_not_interpolate():
+    out = run('let name = "world"\nprint("Hello, {name}!")\n')
+    assert out == "Hello, {name}!\n"
 
 
 def test_arithmetic_and_precedence():
@@ -13,7 +18,7 @@ def test_arithmetic_and_precedence():
 
 def test_if_elif_else():
     out = run(
-        "fn classify(n):\n"
+        "pull classify(n):\n"
         "    if n < 0:\n"
         '        return "neg"\n'
         "    elif n == 0:\n"
@@ -48,7 +53,7 @@ def test_for_over_list_string_and_map():
 
 def test_recursion():
     out = run(
-        "fn fact(n):\n"
+        "pull fact(n):\n"
         "    if n <= 1:\n"
         "        return 1\n"
         "    return n * fact(n - 1)\n"
@@ -59,9 +64,9 @@ def test_recursion():
 
 def test_closures_are_independent_and_mutate_captured_scope():
     out = run(
-        "fn make_counter():\n"
+        "pull make_counter():\n"
         "    let count = 0\n"
-        "    fn increment():\n"
+        "    pull increment():\n"
         "        count = count + 1\n"
         "        return count\n"
         "    return increment\n"
@@ -97,7 +102,7 @@ def test_builtins_smoke():
 
 def test_and_or_short_circuit_and_truthiness():
     out = run(
-        "fn noisy(v):\n"
+        "pull noisy(v):\n"
         '    print("called")\n'
         "    return v\n"
         "let r = false and noisy(true)\n"
@@ -147,7 +152,7 @@ def test_list_index_out_of_range_error():
 
 
 def test_wrong_arity_error():
-    msg = run_expect_error("fn add(a, b):\n    return a + b\nprint(add(1))\n")
+    msg = run_expect_error("pull add(a, b):\n    return a + b\nprint(add(1))\n")
     assert "expects 2 argument" in msg
 
 
@@ -158,9 +163,9 @@ def test_assign_without_let_is_an_error():
 
 def test_nested_function_and_higher_order():
     out = run(
-        "fn apply_twice(f, x):\n"
+        "pull apply_twice(f, x):\n"
         "    return f(f(x))\n"
-        "fn double(x):\n"
+        "pull double(x):\n"
         "    return x * 2\n"
         "print(apply_twice(double, 3))\n"
     )

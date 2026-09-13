@@ -1,4 +1,4 @@
 # the classic first program
 let name = "world"
-print("Hello, {name}!")
-print("2 + 2 = {2 + 2}")
+print(f"Hello, {name}!")
+print(f"2 + 2 = {2 + 2}")

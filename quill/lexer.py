@@ -120,7 +120,7 @@ class Lexer:
         line, col = self.line, self.col
 
         if ch == '"':
-            self._scan_string(line, col)
+            self._scan_string(line, col, interpolate=False)
             return
 
         if ch.isdigit():
@@ -221,7 +221,7 @@ class Lexer:
 
         self.error(f"unexpected character {ch!r}")
 
-    def _scan_string(self, line, col):
+    def _scan_string(self, line, col, interpolate: bool):
         self.advance()  # opening quote
         parts = []  # list of ("lit", str) or ("expr", str) pieces for interpolation
         buf = []
@@ -237,7 +237,7 @@ class Lexer:
                 esc = self.advance()
                 buf.append({"n": "\n", "t": "\t", '"': '"', "\\": "\\", "{": "{"}.get(esc, esc))
                 continue
-            if c == "{":
+            if c == "{" and interpolate:
                 parts.append(("lit", "".join(buf)))
                 buf = []
                 self.advance()
@@ -287,6 +287,11 @@ class Lexer:
         while self.peek().isalnum() or self.peek() == "_":
             self.advance()
         text = self.src[start:self.pos]
+
+        if text == "f" and self.peek() == '"':
+            self._scan_string(line, col, interpolate=True)
+            return
+
         kind = KEYWORDS.get(text)
         if kind is not None:
             self.tokens.append(Token(kind, text, line, col))

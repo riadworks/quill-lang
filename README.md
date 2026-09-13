@@ -32,7 +32,7 @@ quill script.ql        # run a script
 
 ```
 let name = "world"
-print("Hello, {name}!")     # string interpolation with {expr}
+print(f"Hello, {name}!")     # f-strings interpolate {expr}; plain "..." doesn't
 
 if score > 90:
     print("A")
@@ -65,12 +65,12 @@ lets closures mutate a captured variable with no special keyword needed
 ### Functions and closures
 
 ```
-fn add(a, b):
+pull add(a, b):
     return a + b
 
-fn make_counter():
+pull make_counter():
     let count = 0
-    fn increment():
+    pull increment():
         count = count + 1     # mutates the captured `count` directly
         return count
     return increment
@@ -80,27 +80,29 @@ print(counter())   # 1
 print(counter())   # 2
 ```
 
-Functions are values (`let f = fn(x): return x * 2`), including as inline
-arguments — `xs.map(fn(x): return x * x)` works because a single-line
-function body (`fn(...): <one statement>`) doesn't need indentation at all,
-which also happens to be the only way an anonymous function can have a body
-while nested inside a call's parentheses in the first place.
+`pull` is the function-definition keyword (an original choice rather than
+`def`/`fn`). Functions are values (`let double = pull(x): return x * 2`),
+including as inline arguments — `xs.map(pull(x): return x * x)` works because
+a single-line function body (`pull(...): <one statement>`) doesn't need
+indentation at all, which also happens to be the only way an anonymous
+function can have a body while nested inside a call's parentheses in the
+first place.
 
 ### Classes
 
 ```
 class Animal:
-    fn init(name):
+    pull init(name):
         self.name = name
-    fn speak():
-        return "{self.name} makes a sound"
+    pull speak():
+        return f"{self.name} makes a sound"
 
 class Dog(Animal):
-    fn init(name, breed):
+    pull init(name, breed):
         super.init(name)
         self.breed = breed
-    fn speak():
-        return "{self.name} the {self.breed} barks"
+    pull speak():
+        return f"{self.name} the {self.breed} barks"
 
 let rex = Dog("Rex", "Labrador")
 print(rex.speak())    # Rex the Labrador barks
@@ -117,7 +119,7 @@ parameter to declare — it's bound automatically inside methods.
 try:
     let result = risky_operation()
 except e:
-    print("something went wrong: {e}")
+    print(f"something went wrong: {e}")
 finally:
     print("cleanup always runs")
 
@@ -135,7 +137,7 @@ passed to `raise` for your own. `finally` always runs, including when the
 ```
 # mathutils.ql
 let VERSION = "1.0"
-fn square(x):
+pull square(x):
     return x * x
 ```
 ```
@@ -152,13 +154,16 @@ Paths are resolved relative to the importing file.
 - Numbers: `5`, `3.14` (int/float unify automatically; `/` always gives a
   float, `//` gives floor division). Whole-number floats print without a
   trailing `.0` (`sqrt(16)` shows `4`, not `4.0`).
-- Strings: `"text"` with `{expr}` interpolation, `\n`/`\t`/`\"` escapes, and
-  methods: `.upper()` `.lower()` `.trim()` `.split(sep)` `.replace(a, b)`
-  `.contains(s)` `.starts_with(s)` `.ends_with(s)` `.find(s)` `.repeat(n)` `.title()`
+- Strings: `"text"` is always a literal - it never interpolates, even if it
+  contains `{...}`. Prefix it with `f` (`f"text {expr}"`) to interpolate,
+  matching real Python's f-string convention exactly. Both forms support
+  `\n`/`\t`/`\"` escapes and methods: `.upper()` `.lower()` `.trim()`
+  `.split(sep)` `.replace(a, b)` `.contains(s)` `.starts_with(s)`
+  `.ends_with(s)` `.find(s)` `.repeat(n)` `.title()`
 - `true` / `false` / `nil`
 - Lists: `[1, 2, 3]`, indexed with `xs[0]`/`xs[-1]`, with methods:
   `.push(x)` `.pop()` `.sort()` `.reverse()` `.contains(x)` `.index_of(x)`
-  `.join(sep)` `.map(fn)` `.filter(fn)` `.reduce(fn, init)` (`.sort()` and
+  `.join(sep)` `.map(f)` `.filter(f)` `.reduce(f, init)` (`.sort()` and
   `.reverse()` return a new list rather than mutating, matching the
   standalone `sorted()`)
 - Maps: `{"key": "value"}`, indexed with `m["key"]` or `m.key`, with methods:
@@ -200,7 +205,7 @@ quill/
   cli.py            # `quill script.ql` / `quill` REPL
 examples/           # hello, fib, closures, collections, fizzbuzz, classes,
                      # exceptions, methods_and_ops, mathutils + import_demo
-tests/              # 47 tests across the lexer and interpreter end-to-end
+tests/              # 49 tests across the lexer and interpreter end-to-end
 ```
 
 Every feature described above was actually run through the interpreter while
