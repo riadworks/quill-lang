@@ -20,6 +20,34 @@ from quill.values import (
 # without methods.py needing to import interpreter.py at module load time.
 CURRENT_INTERPRETER = [None]
 
+# Operator overloading: a class defining one of these methods has it called for the
+# matching operator when the left-hand operand is an instance of that class. Matches
+# Python's dunder-method convention so it's immediately familiar. No reflected
+# (__radd__-style) operators in v1 - the overload only fires when the instance is
+# the left operand.
+BINARY_DUNDERS = {
+    "+": "__add__",
+    "-": "__sub__",
+    "*": "__mul__",
+    "/": "__div__",
+    "//": "__floordiv__",
+    "%": "__mod__",
+    "**": "__pow__",
+    "<": "__lt__",
+    ">": "__gt__",
+    "<=": "__le__",
+    ">=": "__ge__",
+    "==": "__eq__",
+    "!=": "__eq__",
+}
+
+# Comparison dunders always coerce their result to a real boolean (like != already
+# did) so a sloppy __eq__/__lt__ implementation that returns something non-boolean
+# still prints as true/false rather than leaking a raw value out through == or <.
+# Arithmetic dunders (__add__ etc.) are exempt - their whole point is returning a
+# new instance, not a boolean.
+COMPARISON_OPS = {"==", "!=", "<", ">", "<=", ">="}
+
 
 class ReturnSignal(Exception):
     def __init__(self, value):
@@ -302,6 +330,10 @@ class Interpreter:
     def eval_Unary(self, expr: A.Unary, env):
         value = self.evaluate(expr.operand, env)
         if expr.op == "-":
+            if isinstance(value, QuillInstance):
+                method = value.klass.find_method("__neg__")
+                if method is not None:
+                    return self._call_quill_function(method, [], expr.line, self_instance=value)
             if not isinstance(value, (int, float)) or isinstance(value, bool):
                 raise RuntimeErr(f"cannot negate a {type_name(value)}", expr.line)
             return -value
@@ -322,6 +354,16 @@ class Interpreter:
         right = self.evaluate(expr.right, env)
         op = expr.op
         line = expr.line
+
+        if isinstance(left, QuillInstance):
+            dunder = BINARY_DUNDERS.get(op)
+            method = left.klass.find_method(dunder) if dunder else None
+            if method is not None:
+                result = self._call_quill_function(method, [right], line, self_instance=left)
+                if op in COMPARISON_OPS:
+                    truthy = is_truthy(result)
+                    return not truthy if op == "!=" else truthy
+                return result
 
         if op == "==":
             return quill_equals(left, right)

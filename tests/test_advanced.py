@@ -433,6 +433,71 @@ def test_fstring_interpolation_can_contain_a_double_quoted_string_argument():
     assert out == "a, b, c\n"
 
 
+VEC_CLASS = (
+    "class Vec:\n"
+    "    pull init(x, y):\n"
+    "        self.x = x\n"
+    "        self.y = y\n"
+    "    pull __add__(other):\n"
+    "        return Vec(self.x + other.x, self.y + other.y)\n"
+    "    pull __sub__(other):\n"
+    "        return Vec(self.x - other.x, self.y - other.y)\n"
+    "    pull __mul__(scalar):\n"
+    "        return Vec(self.x * scalar, self.y * scalar)\n"
+    "    pull __eq__(other):\n"
+    "        return self.x == other.x and self.y == other.y\n"
+    "    pull __lt__(other):\n"
+    "        return self.x * self.x + self.y * self.y < other.x * other.x + other.y * other.y\n"
+    "    pull __neg__():\n"
+    "        return Vec(-self.x, -self.y)\n"
+    "    pull __str__():\n"
+    '        return f"Vec({self.x}, {self.y})"\n'
+)
+
+
+def test_operator_overloading_arithmetic_and_str():
+    out = run(VEC_CLASS + "print(Vec(1, 2) + Vec(3, 4))\nprint(Vec(1, 2) * 3)\nprint(-Vec(1, 2))\n")
+    assert out == "Vec(4, 6)\nVec(3, 6)\nVec(-1, -2)\n"
+
+
+def test_operator_overloading_eq_ne_and_lt():
+    out = run(
+        VEC_CLASS + "print(Vec(1, 2) == Vec(1, 2))\n"
+        "print(Vec(1, 2) == Vec(9, 9))\n"
+        "print(Vec(1, 2) != Vec(9, 9))\n"
+        "print(Vec(1, 2) < Vec(3, 4))\n"
+    )
+    assert out == "true\nfalse\ntrue\ntrue\n"
+
+
+def test_str_dunder_used_by_fstring_interpolation():
+    out = run(VEC_CLASS + 'print(f"it is {Vec(1, 2)}")\n')
+    assert out == "it is Vec(1, 2)\n"
+
+
+def test_class_without_str_dunder_still_falls_back_to_repr():
+    # No regression for the common case: a plain class with no __str__ should
+    # print the same "<ClassName instance>" fallback as before this feature.
+    out = run("class Plain:\n    pull init(n):\n        self.n = n\nprint(Plain(5))\n")
+    assert out == "<Plain instance>\n"
+
+
+def test_str_dunder_must_return_a_string():
+    msg = run_expect_error(
+        "class Bad:\n    pull __str__():\n        return 5\nprint(Bad())\n"
+    )
+    assert "__str__() must return a string" in msg
+
+
+def test_comparison_dunder_result_is_normalized_to_a_real_boolean():
+    # A sloppy __eq__ that returns a non-boolean (here, a number) should still
+    # come out as true/false through == and !=, not leak the raw 5 through.
+    out = run(
+        "class Loose:\n    pull __eq__(other):\n        return 5\nprint(Loose() == Loose())\nprint(Loose() != Loose())\n"
+    )
+    assert out == "true\nfalse\n"
+
+
 def test_destructuring_non_list_is_a_clear_error():
     msg = run_expect_error("let a, b = 5\n")
     assert "cannot unpack" in msg

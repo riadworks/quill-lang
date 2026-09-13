@@ -113,6 +113,34 @@ Single inheritance. `super.method(...)` calls the parent's version and
 resolves correctly through arbitrarily deep chains. No `self` parameter to
 declare; it's bound automatically inside methods.
 
+### Operator overloading
+
+```
+class Vec:
+    pull init(x, y):
+        self.x = x
+        self.y = y
+    pull __add__(other):
+        return Vec(self.x + other.x, self.y + other.y)
+    pull __eq__(other):
+        return self.x == other.x and self.y == other.y
+    pull __str__():
+        return f"Vec({self.x}, {self.y})"
+
+print(Vec(1, 2) + Vec(3, 4))    # Vec(4, 6)
+print(Vec(1, 2) == Vec(1, 2))   # true
+```
+
+A class defines `__add__` `__sub__` `__mul__` `__div__` `__floordiv__` `__mod__`
+`__pow__` `__eq__` `__lt__` `__gt__` `__le__` `__ge__` `__neg__` `__str__` the
+same way Python does, and the matching operator calls it. Two things worth
+knowing: the overload only fires when the *instance* is the left-hand operand
+(no `__radd__`-style reflected operators yet), and `__eq__`/`__lt__`/etc.
+always come back as a real `true`/`false` even if the method itself returns
+something else, so a sloppy implementation can't leak a non-boolean out
+through `==`. A class with no `__str__` still prints as `<ClassName instance>`,
+exactly as before this feature existed.
+
 ### Exceptions
 
 ```
@@ -207,10 +235,10 @@ automatically, with `Content-Type` set to match) or a plain string.
 
 ## What's deliberately not here yet
 
-Multiple inheritance, operator overloading, a package manager / third-party
-libraries, async/concurrency, static typing. All reasonable next steps if
-this keeps growing — left out to keep what's here solid and well-tested
-rather than spreading thinner.
+Multiple inheritance, reflected operators (`__radd__`-style), a package
+manager / third-party libraries, async/concurrency, static typing. All
+reasonable next steps if this keeps growing — left out to keep what's here
+solid and well-tested rather than spreading thinner.
 
 ## Project layout
 

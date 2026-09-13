@@ -5,6 +5,8 @@ strings -> str, booleans -> bool, nil -> None, lists -> list, maps -> dict.
 User-defined functions and built-ins get their own small wrapper classes.
 """
 
+from quill.errors import RuntimeErr
+
 
 class QuillFunction:
     __slots__ = ("name", "params", "body", "closure", "owner_class")
@@ -138,8 +140,15 @@ def quill_str(value) -> str:
         return "[" + ", ".join(quill_repr(v) for v in value) + "]"
     if isinstance(value, dict):
         return "{" + ", ".join(f"{quill_repr(k)}: {quill_repr(v)}" for k, v in value.items()) + "}"
-    # instances/classes/functions: no auto-invoked "toString" protocol in v1 - call a method
-    # explicitly (e.g. print(p.to_string())) for custom formatting. This just falls back to repr().
+    if isinstance(value, QuillInstance):
+        method = value.klass.find_method("__str__")
+        if method is not None:
+            from quill.interpreter import CURRENT_INTERPRETER
+
+            result = CURRENT_INTERPRETER[0].call(BoundInstanceMethod(value, method), [], 0)
+            if not isinstance(result, str):
+                raise RuntimeErr(f"__str__() must return a string, got {type_name(result)}", 0)
+            return result
     return repr(value)
 
 
