@@ -25,6 +25,15 @@ class T(Enum):
     AND = auto()
     OR = auto()
     NOT = auto()
+    CLASS = auto()
+    SELF = auto()
+    SUPER = auto()
+    TRY = auto()
+    EXCEPT = auto()
+    FINALLY = auto()
+    RAISE = auto()
+    IMPORT = auto()
+    AS = auto()
 
     # operators / punctuation
     PLUS = auto()
@@ -33,6 +42,11 @@ class T(Enum):
     SLASH = auto()
     PERCENT = auto()
     STARSTAR = auto()
+    SLASHSLASH = auto()
+    PLUSEQ = auto()
+    MINUSEQ = auto()
+    STAREQ = auto()
+    SLASHEQ = auto()
     EQ = auto()
     EQEQ = auto()
     NEQ = auto()
@@ -75,6 +89,15 @@ KEYWORDS = {
     "true": T.TRUE,
     "false": T.FALSE,
     "nil": T.NIL,
+    "class": T.CLASS,
+    "self": T.SELF,
+    "super": T.SUPER,
+    "try": T.TRY,
+    "except": T.EXCEPT,
+    "finally": T.FINALLY,
+    "raise": T.RAISE,
+    "import": T.IMPORT,
+    "as": T.AS,
 }
 
 

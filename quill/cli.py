@@ -1,3 +1,4 @@
+import os
 import sys
 
 from quill.builtins import build_globals
@@ -20,6 +21,7 @@ def run_file(path: str) -> int:
 
     env = build_globals()
     interp = Interpreter(env)
+    interp.current_dir = os.path.dirname(os.path.abspath(path))
     try:
         run_source(source, interp, env)
     except QuillError as exc:

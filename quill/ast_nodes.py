@@ -93,6 +93,26 @@ class FnExpr:
     line: int = 0
 
 
+@dataclass
+class Get:
+    obj: object
+    name: str
+    line: int = 0
+
+
+@dataclass
+class SuperExpr:
+    line: int = 0
+
+
+@dataclass
+class Ternary:
+    cond: object
+    then_expr: object
+    else_expr: object
+    line: int = 0
+
+
 # ---------- Statements ----------
 
 @dataclass
@@ -150,4 +170,34 @@ class BreakStmt:
 
 @dataclass
 class ContinueStmt:
+    line: int = 0
+
+
+@dataclass
+class ClassDecl:
+    name: str
+    superclass_name: Optional[str]
+    methods: dict  # name -> FnExpr
+    line: int = 0
+
+
+@dataclass
+class TryStmt:
+    body: list
+    except_name: Optional[str]
+    except_body: Optional[list]
+    finally_body: Optional[list]
+    line: int = 0
+
+
+@dataclass
+class RaiseStmt:
+    expr: object
+    line: int = 0
+
+
+@dataclass
+class ImportStmt:
+    path: str
+    alias: str
     line: int = 0

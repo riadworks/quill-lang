@@ -176,6 +176,67 @@ def build_globals() -> Environment:
         end = int(_require_number("slice", end, line))
         return seq[start:end]
 
+    def b_sqrt(args, line):
+        import math
+
+        _arity("sqrt", args, line, 1)
+        n = _require_number("sqrt", args[0], line)
+        if n < 0:
+            raise RuntimeErr("sqrt() of a negative number", line)
+        return math.sqrt(n)
+
+    def b_floor(args, line):
+        import math
+
+        _arity("floor", args, line, 1)
+        return math.floor(_require_number("floor", args[0], line))
+
+    def b_ceil(args, line):
+        import math
+
+        _arity("ceil", args, line, 1)
+        return math.ceil(_require_number("ceil", args[0], line))
+
+    def b_enumerate(args, line):
+        _arity("enumerate", args, line, 1)
+        lst = _require_list("enumerate", args[0], line)
+        return [[i, v] for i, v in enumerate(lst)]
+
+    def b_zip(args, line):
+        _arity("zip", args, line, 2)
+        a = _require_list("zip", args[0], line)
+        b = _require_list("zip", args[1], line)
+        return [[x, y] for x, y in zip(a, b)]
+
+    def b_read_file(args, line):
+        _arity("read_file", args, line, 1)
+        path = args[0]
+        if not isinstance(path, str):
+            raise RuntimeErr(f"read_file() expects a string path, got {type_name(path)}", line)
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                return f.read()
+        except OSError as exc:
+            raise RuntimeErr(f"cannot read '{path}': {exc.strerror}", line)
+
+    def b_write_file(args, line):
+        _arity("write_file", args, line, 2)
+        path, content = args
+        if not isinstance(path, str):
+            raise RuntimeErr(f"write_file() expects a string path, got {type_name(path)}", line)
+        try:
+            with open(path, "w", encoding="utf-8") as f:
+                f.write(quill_str(content))
+        except OSError as exc:
+            raise RuntimeErr(f"cannot write '{path}': {exc.strerror}", line)
+        return None
+
+    def b_file_exists(args, line):
+        import os
+
+        _arity("file_exists", args, line, 1)
+        return os.path.isfile(args[0])
+
     reg("print", b_print)
     reg("len", b_len)
     reg("type", b_type)
@@ -197,5 +258,14 @@ def build_globals() -> Environment:
     reg("abs", b_abs)
     reg("round", b_round)
     reg("slice", b_slice)
+    reg("sqrt", b_sqrt)
+    reg("floor", b_floor)
+    reg("ceil", b_ceil)
+    reg("enumerate", b_enumerate)
+    reg("zip", b_zip)
+    reg("read_file", b_read_file)
+    reg("write_file", b_write_file)
+    reg("file_exists", b_file_exists)
+    env.declare("PI", 3.141592653589793)
 
     return env

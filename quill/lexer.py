@@ -2,8 +2,6 @@ from quill.errors import LexError
 from quill.tokens import KEYWORDS, T, Token
 
 SINGLE_CHAR = {
-    "+": T.PLUS,
-    "-": T.MINUS,
     "%": T.PERCENT,
     "(": T.LPAREN,
     ")": T.RPAREN,
@@ -143,18 +141,46 @@ class Lexer:
             self.tokens.append(Token(SINGLE_CHAR[ch], ch, line, col))
             return
 
+        if ch == "+":
+            self.advance()
+            if self.peek() == "=":
+                self.advance()
+                self.tokens.append(Token(T.PLUSEQ, "+=", line, col))
+            else:
+                self.tokens.append(Token(T.PLUS, "+", line, col))
+            return
+
+        if ch == "-":
+            self.advance()
+            if self.peek() == "=":
+                self.advance()
+                self.tokens.append(Token(T.MINUSEQ, "-=", line, col))
+            else:
+                self.tokens.append(Token(T.MINUS, "-", line, col))
+            return
+
         if ch == "*":
             self.advance()
             if self.peek() == "*":
                 self.advance()
                 self.tokens.append(Token(T.STARSTAR, "**", line, col))
+            elif self.peek() == "=":
+                self.advance()
+                self.tokens.append(Token(T.STAREQ, "*=", line, col))
             else:
                 self.tokens.append(Token(T.STAR, "*", line, col))
             return
 
         if ch == "/":
             self.advance()
-            self.tokens.append(Token(T.SLASH, "/", line, col))
+            if self.peek() == "/":
+                self.advance()
+                self.tokens.append(Token(T.SLASHSLASH, "//", line, col))
+            elif self.peek() == "=":
+                self.advance()
+                self.tokens.append(Token(T.SLASHEQ, "/=", line, col))
+            else:
+                self.tokens.append(Token(T.SLASH, "/", line, col))
             return
 
         if ch == "=":

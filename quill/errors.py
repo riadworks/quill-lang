@@ -18,3 +18,19 @@ class ParseError(QuillError):
 
 class RuntimeErr(QuillError):
     pass
+
+
+class QuillThrow(QuillError):
+    """A user `raise expr` - carries an arbitrary Quill value, catchable by try/except.
+
+    Subclasses QuillError (rather than plain Exception) so that an uncaught raise -
+    one with no matching try/except - is still handled by the same top-level error
+    reporting as every other kind of error, instead of crashing the CLI/REPL with a
+    raw Python traceback.
+    """
+
+    def __init__(self, value, line=None):
+        from quill.values import quill_str
+
+        self.value = value
+        super().__init__(quill_str(value), line)

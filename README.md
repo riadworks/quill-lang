@@ -1,7 +1,8 @@
 # Quill
 
-A small, friendly, general-purpose scripting language. Python-style indentation
-for blocks, dynamically typed, closures that just work, built in Python as a
+A general-purpose scripting language: classes with inheritance, exceptions,
+closures, a module system, and a real standard library — not a toy anymore.
+Python-style indentation, dynamically typed, built in Python as a
 tree-walking interpreter.
 
 The name's a placeholder — trivial to rename later (it's just the string
@@ -27,18 +28,39 @@ quill script.ql        # run a script
 
 ## The language
 
-### Variables and printing
+### Variables, printing, and control flow
 
 ```
 let name = "world"
 print("Hello, {name}!")     # string interpolation with {expr}
-print("2 + 2 = {2 + 2}")
+
+if score > 90:
+    print("A")
+elif score > 80:
+    print("B")
+else:
+    print("C")
+
+# one-liner form works too, same as Python:
+if x > 0: print("positive")
+else: print("non-positive")
+
+let i = 0
+while i < 5:
+    print(i)
+    i += 1              # augmented assignment: += -= *= /=
+
+for x in [1, 2, 3]:
+    print(x)
+for n in range(1, 21):
+    if n % 15 == 0:
+        print("FizzBuzz")
 ```
 
-`let` declares a new variable. Plain `name = value` (no `let`) assigns to an
-*existing* variable — declaring first is required, which catches typos early
-and is what makes closures able to mutate a captured variable without any
-special keyword (see below).
+`let` declares a new variable; plain `name = value` assigns to an *existing*
+one. Declaring first is required — it catches typos early, and it's what
+lets closures mutate a captured variable with no special keyword needed
+(see below).
 
 ### Functions and closures
 
@@ -49,7 +71,7 @@ fn add(a, b):
 fn make_counter():
     let count = 0
     fn increment():
-        count = count + 1     # mutates the captured `count`, no special syntax needed
+        count = count + 1     # mutates the captured `count` directly
         return count
     return increment
 
@@ -58,82 +80,135 @@ print(counter())   # 1
 print(counter())   # 2
 ```
 
-Functions are values — `let f = fn(x): return x * 2` works too, for passing
-callbacks around.
+Functions are values (`let f = fn(x): return x * 2`), including as inline
+arguments — `xs.map(fn(x): return x * x)` works because a single-line
+function body (`fn(...): <one statement>`) doesn't need indentation at all,
+which also happens to be the only way an anonymous function can have a body
+while nested inside a call's parentheses in the first place.
 
-### Control flow
+### Classes
 
 ```
-if score > 90:
-    print("A")
-elif score > 80:
-    print("B")
-else:
-    print("C")
+class Animal:
+    fn init(name):
+        self.name = name
+    fn speak():
+        return "{self.name} makes a sound"
 
-let i = 0
-while i < 5:
-    print(i)
-    i = i + 1
+class Dog(Animal):
+    fn init(name, breed):
+        super.init(name)
+        self.breed = breed
+    fn speak():
+        return "{self.name} the {self.breed} barks"
 
-for x in [1, 2, 3]:
-    print(x)
-
-for n in range(1, 21):
-    if n % 15 == 0:
-        print("FizzBuzz")
+let rex = Dog("Rex", "Labrador")
+print(rex.speak())    # Rex the Labrador barks
+print(type(rex))      # Dog
 ```
 
-`break` and `continue` work inside `while`/`for`. `for` iterates lists,
-strings (character by character), and maps (over their keys).
+Single inheritance, `super.method(...)` calls the parent's version (works
+correctly through arbitrarily deep chains, not just one level). No `self`
+parameter to declare — it's bound automatically inside methods.
 
-### Data types
+### Exceptions
 
-- Numbers: `5`, `3.14` (int/float unify automatically, `/` always gives a float)
-- Strings: `"text"`, with `{expr}` interpolation and `\n`/`\t`/`\"` escapes
+```
+try:
+    let result = risky_operation()
+except e:
+    print("something went wrong: {e}")
+finally:
+    print("cleanup always runs")
+
+raise "custom error message"
+```
+
+`except` catches both your own `raise`d values *and* built-in runtime errors
+(division by zero, bad index, wrong argument count, etc.) — the caught value
+is the error message string for built-in errors, or whatever value you
+passed to `raise` for your own. `finally` always runs, including when the
+`try` block returns or an exception isn't caught at all.
+
+### Modules
+
+```
+# mathutils.ql
+let VERSION = "1.0"
+fn square(x):
+    return x * x
+```
+```
+# main.ql
+import "mathutils.ql" as mu
+print(mu.VERSION)
+print(mu.square(5))
+```
+
+Paths are resolved relative to the importing file.
+
+### Data types and method-call syntax
+
+- Numbers: `5`, `3.14` (int/float unify automatically; `/` always gives a
+  float, `//` gives floor division). Whole-number floats print without a
+  trailing `.0` (`sqrt(16)` shows `4`, not `4.0`).
+- Strings: `"text"` with `{expr}` interpolation, `\n`/`\t`/`\"` escapes, and
+  methods: `.upper()` `.lower()` `.trim()` `.split(sep)` `.replace(a, b)`
+  `.contains(s)` `.starts_with(s)` `.ends_with(s)` `.find(s)` `.repeat(n)` `.title()`
 - `true` / `false` / `nil`
-- Lists: `[1, 2, 3]`, indexed with `xs[0]` or `xs[-1]` (negative = from the end)
-- Maps: `{"key": "value"}`, indexed with `m["key"]`
-
-Truthiness follows the usual scripting-language intuition: `nil`, `false`,
-`0`, `""`, `[]`, and `{}` are falsy; everything else is truthy.
+- Lists: `[1, 2, 3]`, indexed with `xs[0]`/`xs[-1]`, with methods:
+  `.push(x)` `.pop()` `.sort()` `.reverse()` `.contains(x)` `.index_of(x)`
+  `.join(sep)` `.map(fn)` `.filter(fn)` `.reduce(fn, init)` (`.sort()` and
+  `.reverse()` return a new list rather than mutating, matching the
+  standalone `sorted()`)
+- Maps: `{"key": "value"}`, indexed with `m["key"]` or `m.key`, with methods:
+  `.keys()` `.values()` `.items()` `.has(k)` `.get(k, default)`
+- Ternary expression: `"big" if x > 5 else "small"`
 
 ### Built-in functions
 
 `print`, `len`, `type`, `str`, `num`, `bool`, `range`, `input`, `push`, `pop`,
 `keys`, `values`, `items`, `has`, `sorted`, `sum`, `min`, `max`, `abs`,
-`round`, `slice`. Collections use functions rather than methods
-(`push(list, x)`, not `list.push(x)`) — this keeps the interpreter simple
-for now; method-call sugar is a natural thing to add later.
+`round`, `slice`, `sqrt`, `floor`, `ceil`, `enumerate`, `zip`, `read_file`,
+`write_file`, `file_exists`, plus the constant `PI`. (The older top-level
+`push`/`pop`/`keys`/etc. and the newer `.push()`/`.pop()`/`.keys()` method
+forms both work and do the same thing — the methods are just nicer to chain.)
 
 ## What's deliberately not here yet
 
-No classes/structs, no modules/imports, no exception handling (`try`/`catch`),
-no floor division. All of these are reasonable next steps, left out of v1 to
-keep the core (functions, closures, control flow, collections, clear error
-messages) solid and well-tested first rather than spreading thin.
+Multiple inheritance, operator overloading, a package manager / third-party
+libraries, async/concurrency, static typing. All reasonable next steps if
+this keeps growing — left out to keep what's here solid and well-tested
+rather than spreading thinner.
 
 ## Project layout
 
 ```
 quill/
-  lexer.py          # tokenizer - handles indentation (INDENT/DEDENT), the
-                     # trickiest part, plus string interpolation
+  lexer.py          # tokenizer - tracks indentation (INDENT/DEDENT tokens),
+                     # the trickiest part, plus string interpolation
   tokens.py         # token types
   ast_nodes.py      # AST node dataclasses
   parser.py         # recursive-descent parser with precedence climbing
   environment.py    # scope chain (this is what makes closures work)
-  interpreter.py    # tree-walking evaluator
-  values.py         # runtime value helpers (truthiness, equality, printing)
-  builtins.py       # built-in functions
+  interpreter.py    # tree-walking evaluator: control flow, classes,
+                     # exceptions, imports, method dispatch
+  values.py         # runtime value types (QuillClass, QuillInstance,
+                     # bound methods) and formatting/equality helpers
+  methods.py        # built-in method tables for strings/lists/maps
+  builtins.py       # top-level built-in functions
   cli.py            # `quill script.ql` / `quill` REPL
-examples/           # hello.ql, fib.ql, closures.ql, collections.ql, fizzbuzz.ql
-tests/              # 26 tests across the lexer and the interpreter end-to-end
+examples/           # hello, fib, closures, collections, fizzbuzz, classes,
+                     # exceptions, methods_and_ops, mathutils + import_demo
+tests/              # 47 tests across the lexer and interpreter end-to-end
 ```
 
-Every example in `examples/` and every behavior described above was actually
-run through the interpreter while building this, not just written and assumed
-to work — including deliberately triggering errors (undefined variable,
-division by zero, type mismatch, out-of-range index, wrong argument count) to
-confirm they produce a clean message with a line number instead of a raw
-Python traceback.
+Every feature described above was actually run through the interpreter while
+building it, not just written and assumed to work. That process caught two
+real bugs worth knowing about if you're extending this: (1) a duplicated
+token-consumption bug in the class-body parser that broke every method
+definition, found by running the first classes example; (2) `raise`d
+exceptions not inheriting from the same base error class as everything else,
+which meant an uncaught `raise` would crash the CLI with a raw Python
+traceback instead of a clean message — found by deliberately testing that
+exact scenario rather than assuming the happy-path tests covered it.

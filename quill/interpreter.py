@@ -1,7 +1,24 @@
 from quill import ast_nodes as A
 from quill.environment import Environment
-from quill.errors import RuntimeErr
-from quill.values import BuiltinFunction, QuillFunction, is_truthy, quill_equals, quill_str, type_name
+from quill.errors import QuillThrow, RuntimeErr
+from quill.values import (
+    BoundBuiltinMethod,
+    BoundInstanceMethod,
+    BuiltinFunction,
+    QuillClass,
+    QuillFunction,
+    QuillInstance,
+    SuperProxy,
+    is_truthy,
+    quill_equals,
+    quill_str,
+    type_name,
+)
+
+# The single currently-running Interpreter, so builtin higher-order functions
+# (map/filter/reduce in methods.py) can call back into user-defined functions
+# without methods.py needing to import interpreter.py at module load time.
+CURRENT_INTERPRETER = [None]
 
 
 class ReturnSignal(Exception):
@@ -20,6 +37,7 @@ class ContinueSignal(Exception):
 class Interpreter:
     def __init__(self, globals_env: Environment):
         self.globals = globals_env
+        CURRENT_INTERPRETER[0] = self
 
     def run(self, program: list):
         for stmt in program:
@@ -49,8 +67,80 @@ class Interpreter:
             container = self.evaluate(target.obj, env)
             index = self.evaluate(target.index, env)
             self._set_index(container, index, value, stmt.line)
+        elif isinstance(target, A.Get):
+            obj = self.evaluate(target.obj, env)
+            if isinstance(obj, QuillInstance):
+                obj.fields[target.name] = value
+            elif isinstance(obj, dict):
+                obj[target.name] = value
+            else:
+                raise RuntimeErr(f"cannot assign to '.{target.name}' on a {type_name(obj)}", stmt.line)
         else:
             raise RuntimeErr("invalid assignment target", stmt.line)
+
+    def exec_ClassDecl(self, stmt: A.ClassDecl, env):
+        superclass = None
+        if stmt.superclass_name is not None:
+            superclass = env.get(stmt.superclass_name, stmt.line)
+            if not isinstance(superclass, QuillClass):
+                raise RuntimeErr(f"'{stmt.superclass_name}' is not a class", stmt.line)
+        quill_class = QuillClass(stmt.name, {}, superclass)
+        quill_class.methods = {
+            name: QuillFunction(name, fn_expr.params, fn_expr.body, env, owner_class=quill_class)
+            for name, fn_expr in stmt.methods.items()
+        }
+        env.declare(stmt.name, quill_class)
+
+    def exec_TryStmt(self, stmt: A.TryStmt, env):
+        try:
+            try:
+                self._exec_block(stmt.body, Environment(env))
+            except QuillThrow as thrown:
+                if stmt.except_body is None:
+                    raise
+                self._run_except(stmt, thrown.value, env)
+            except RuntimeErr as err:
+                if stmt.except_body is None:
+                    raise
+                self._run_except(stmt, err.message, env)
+        finally:
+            if stmt.finally_body is not None:
+                self._exec_block(stmt.finally_body, Environment(env))
+
+    def _run_except(self, stmt: A.TryStmt, value, env):
+        handler_env = Environment(env)
+        if stmt.except_name is not None:
+            handler_env.declare(stmt.except_name, value)
+        self._exec_block(stmt.except_body, handler_env)
+
+    def exec_RaiseStmt(self, stmt: A.RaiseStmt, env):
+        value = self.evaluate(stmt.expr, env)
+        raise QuillThrow(value, stmt.line)
+
+    def exec_ImportStmt(self, stmt: A.ImportStmt, env):
+        import os
+
+        from quill.builtins import build_globals
+        from quill.lexer import tokenize
+        from quill.parser import parse
+
+        base_dir = getattr(self, "current_dir", ".")
+        full_path = os.path.join(base_dir, stmt.path)
+        try:
+            with open(full_path, "r", encoding="utf-8") as f:
+                source = f.read()
+        except OSError as exc:
+            raise RuntimeErr(f"cannot import '{stmt.path}': {exc.strerror}", stmt.line)
+
+        module_env = build_globals()
+        module_interp = Interpreter(module_env)
+        module_interp.current_dir = os.path.dirname(full_path) or "."
+        program = parse(tokenize(source))
+        module_interp.run(program)
+        CURRENT_INTERPRETER[0] = self  # restore - imports may nest/finish out of order otherwise
+
+        namespace = dict(module_env.vars)
+        env.declare(stmt.alias, namespace)
 
     def exec_IfStmt(self, stmt: A.IfStmt, env):
         for cond, body in stmt.branches:
@@ -186,7 +276,7 @@ class Interpreter:
                 f"cannot add {type_name(left)} and {type_name(right)} (use str() to convert first)", line
             )
 
-        if op in ("-", "*", "/", "%", "**", "<", ">", "<=", ">="):
+        if op in ("-", "*", "/", "//", "%", "**", "<", ">", "<=", ">="):
             if not (_is_num(left) and _is_num(right)):
                 raise RuntimeErr(f"cannot use '{op}' on {type_name(left)} and {type_name(right)}", line)
             if op == "-":
@@ -197,6 +287,10 @@ class Interpreter:
                 if right == 0:
                     raise RuntimeErr("division by zero", line)
                 return left / right
+            if op == "//":
+                if right == 0:
+                    raise RuntimeErr("division by zero", line)
+                return left // right
             if op == "%":
                 if right == 0:
                     raise RuntimeErr("division by zero", line)
@@ -227,25 +321,97 @@ class Interpreter:
     def eval_FnExpr(self, expr: A.FnExpr, env):
         return QuillFunction(expr.name, expr.params, expr.body, env)
 
+    def eval_Ternary(self, expr: A.Ternary, env):
+        if is_truthy(self.evaluate(expr.cond, env)):
+            return self.evaluate(expr.then_expr, env)
+        return self.evaluate(expr.else_expr, env)
+
+    def eval_Get(self, expr: A.Get, env):
+        obj = self.evaluate(expr.obj, env)
+        return self._get_attr(obj, expr.name, expr.line)
+
+    def eval_SuperExpr(self, expr: A.SuperExpr, env):
+        self_instance = env.get("self", expr.line)
+        superclass = env.get("__super_class__", expr.line)
+        if superclass is None:
+            raise RuntimeErr("'super' used outside of a subclass method", expr.line)
+        return SuperProxy(self_instance, superclass)
+
+    def _get_attr(self, obj, name, line):
+        if isinstance(obj, QuillInstance):
+            if name in obj.fields:
+                return obj.fields[name]
+            method = obj.klass.find_method(name)
+            if method is not None:
+                return BoundInstanceMethod(obj, method)
+            raise RuntimeErr(f"'{obj.klass.name}' has no field or method '{name}'", line)
+        if isinstance(obj, SuperProxy):
+            method = obj.superclass.find_method(name)
+            if method is None:
+                raise RuntimeErr(f"'{obj.superclass.name}' has no method '{name}'", line)
+            return BoundInstanceMethod(obj.instance, method)
+        if isinstance(obj, dict):
+            if name in obj:
+                return obj[name]
+            from quill.methods import MAP_METHODS
+
+            if name in MAP_METHODS:
+                return BoundBuiltinMethod(obj, name, MAP_METHODS[name])
+            raise RuntimeErr(f"map has no key or method '{name}'", line)
+        if isinstance(obj, list):
+            from quill.methods import LIST_METHODS
+
+            if name in LIST_METHODS:
+                return BoundBuiltinMethod(obj, name, LIST_METHODS[name])
+            raise RuntimeErr(f"list has no method '{name}'", line)
+        if isinstance(obj, str):
+            from quill.methods import STRING_METHODS
+
+            if name in STRING_METHODS:
+                return BoundBuiltinMethod(obj, name, STRING_METHODS[name])
+            raise RuntimeErr(f"string has no method '{name}'", line)
+        raise RuntimeErr(f"cannot access '.{name}' on a {type_name(obj)}", line)
+
     # ---------- calling / indexing helpers ----------
 
     def call(self, callee, args, line):
         if isinstance(callee, BuiltinFunction):
             return callee.fn(args, line)
+
+        if isinstance(callee, BoundBuiltinMethod):
+            return callee.fn(callee.receiver, args, line)
+
+        if isinstance(callee, BoundInstanceMethod):
+            return self._call_quill_function(callee.func, args, line, self_instance=callee.instance)
+
+        if isinstance(callee, QuillClass):
+            instance = QuillInstance(callee)
+            init_method = callee.find_method("init")
+            if init_method is not None:
+                self._call_quill_function(init_method, args, line, self_instance=instance)
+            elif args:
+                raise RuntimeErr(f"'{callee.name}' has no init() but {len(args)} argument(s) were given", line)
+            return instance
+
         if isinstance(callee, QuillFunction):
-            if len(args) != len(callee.params):
-                raise RuntimeErr(
-                    f"'{callee.name or 'anonymous'}' expects {len(callee.params)} argument(s), got {len(args)}", line
-                )
-            call_env = Environment(callee.closure)
-            for name, value in zip(callee.params, args):
-                call_env.declare(name, value)
-            try:
-                self._exec_block(callee.body, call_env)
-            except ReturnSignal as r:
-                return r.value
-            return None
+            return self._call_quill_function(callee, args, line)
+
         raise RuntimeErr(f"'{type_name(callee)}' is not callable", line)
+
+    def _call_quill_function(self, fn: QuillFunction, args, line, self_instance=None):
+        if len(args) != len(fn.params):
+            raise RuntimeErr(f"'{fn.name or 'anonymous'}' expects {len(fn.params)} argument(s), got {len(args)}", line)
+        call_env = Environment(fn.closure)
+        if self_instance is not None:
+            call_env.declare("self", self_instance)
+            call_env.declare("__super_class__", fn.owner_class.superclass if fn.owner_class else None)
+        for name, value in zip(fn.params, args):
+            call_env.declare(name, value)
+        try:
+            self._exec_block(fn.body, call_env)
+        except ReturnSignal as r:
+            return r.value
+        return None
 
     def _get_index(self, obj, index, line):
         if isinstance(obj, list):

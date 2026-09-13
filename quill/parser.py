@@ -4,7 +4,8 @@ from quill.tokens import T, Token
 
 COMPARISON_OPS = {T.EQEQ: "==", T.NEQ: "!=", T.LT: "<", T.GT: ">", T.LE: "<=", T.GE: ">="}
 ADD_OPS = {T.PLUS: "+", T.MINUS: "-"}
-MUL_OPS = {T.STAR: "*", T.SLASH: "/", T.PERCENT: "%"}
+MUL_OPS = {T.STAR: "*", T.SLASH: "/", T.PERCENT: "%", T.SLASHSLASH: "//"}
+AUG_ASSIGN_OPS = {T.PLUSEQ: "+", T.MINUSEQ: "-", T.STAREQ: "*", T.SLASHEQ: "/"}
 
 
 class Parser:
@@ -55,7 +56,14 @@ class Parser:
 
     def parse_block(self) -> list:
         self.expect(T.COLON, "expected ':' to start a block")
-        self.expect(T.NEWLINE, "expected a newline after ':'")
+        if not self.check(T.NEWLINE):
+            # single-line form, e.g. `if x: return 1` - also the only way an anonymous
+            # function passed inline as a call argument can have a body at all, since
+            # the lexer suppresses INDENT/NEWLINE entirely while inside parentheses.
+            stmt = self.parse_stmt()
+            self.match(T.NEWLINE)
+            return [stmt]
+        self.advance()  # NEWLINE
         self.expect(T.INDENT, "expected an indented block")
         stmts = []
         self.skip_newlines()
@@ -86,6 +94,14 @@ class Parser:
         if self.check(T.CONTINUE):
             tok = self.advance()
             return A.ContinueStmt(line=tok.line)
+        if self.check(T.CLASS):
+            return self.parse_class()
+        if self.check(T.TRY):
+            return self.parse_try()
+        if self.check(T.RAISE):
+            return self.parse_raise()
+        if self.check(T.IMPORT):
+            return self.parse_import()
         return self.parse_expr_or_assign_stmt()
 
     def parse_let(self):
@@ -154,16 +170,83 @@ class Parser:
     def parse_expr_or_assign_stmt(self):
         expr = self.parse_expr()
         if self.match(T.EQ):
-            if not isinstance(expr, (A.NameExpr, A.Index)):
+            if not isinstance(expr, (A.NameExpr, A.Index, A.Get)):
                 raise ParseError("invalid assignment target", expr.line)
             value = self.parse_expr()
             return A.AssignStmt(expr, value, line=expr.line)
+        if self.peek().type in AUG_ASSIGN_OPS:
+            op = AUG_ASSIGN_OPS[self.advance().type]
+            if not isinstance(expr, (A.NameExpr, A.Index, A.Get)):
+                raise ParseError("invalid assignment target", expr.line)
+            rhs = self.parse_expr()
+            combined = A.Binary(op, expr, rhs, line=expr.line)
+            return A.AssignStmt(expr, combined, line=expr.line)
         return A.ExprStmt(expr, line=expr.line)
+
+    def parse_class(self):
+        tok = self.advance()
+        name = self.expect(T.NAME, "expected a class name").value
+        superclass_name = None
+        if self.match(T.LPAREN):
+            superclass_name = self.expect(T.NAME, "expected a superclass name").value
+            self.expect(T.RPAREN, "expected ')' after superclass name")
+        self.expect(T.COLON, "expected ':' to start the class body")
+        self.expect(T.NEWLINE, "expected a newline after ':'")
+        self.expect(T.INDENT, "expected an indented class body")
+        methods = {}
+        self.skip_newlines()
+        while not self.check(T.DEDENT, T.EOF):
+            mtok = self.expect(T.FN, "only method definitions (fn ...) are allowed directly inside a class body")
+            mname = self.expect(T.NAME, "expected a method name").value
+            params = self.parse_params()
+            body = self.parse_block()
+            methods[mname] = A.FnExpr(params, body, name=mname, line=mtok.line)
+            self.skip_newlines()
+        self.expect(T.DEDENT, "expected the class body to end (dedent)")
+        return A.ClassDecl(name, superclass_name, methods, line=tok.line)
+
+    def parse_try(self):
+        tok = self.advance()
+        body = self.parse_block()
+        except_name = None
+        except_body = None
+        if self.check(T.EXCEPT):
+            self.advance()
+            if self.check(T.NAME):
+                except_name = self.advance().value
+            except_body = self.parse_block()
+        finally_body = None
+        if self.check(T.FINALLY):
+            self.advance()
+            finally_body = self.parse_block()
+        if except_body is None and finally_body is None:
+            raise ParseError("expected 'except' or 'finally' after 'try'", tok.line)
+        return A.TryStmt(body, except_name, except_body, finally_body, line=tok.line)
+
+    def parse_raise(self):
+        tok = self.advance()
+        expr = self.parse_expr()
+        return A.RaiseStmt(expr, line=tok.line)
+
+    def parse_import(self):
+        tok = self.advance()
+        path_tok = self.expect(T.STRING, "expected a quoted file path after 'import'")
+        path = "".join(text for kind, text in path_tok.value if kind == "lit")
+        self.expect(T.AS, "expected 'as' after the import path")
+        alias = self.expect(T.NAME, "expected a name after 'as'").value
+        return A.ImportStmt(path, alias, line=tok.line)
 
     # ---------- expressions (precedence climbing) ----------
 
     def parse_expr(self):
-        return self.parse_or()
+        expr = self.parse_or()
+        if self.check(T.IF):
+            self.advance()
+            cond = self.parse_or()
+            self.expect(T.ELSE, "expected 'else' to complete the conditional expression")
+            else_expr = self.parse_expr()
+            return A.Ternary(cond, expr, else_expr, line=expr.line)
+        return expr
 
     def parse_or(self):
         left = self.parse_and()
@@ -244,6 +327,10 @@ class Parser:
                 index = self.parse_expr()
                 self.expect(T.RBRACKET, "expected ']' after index")
                 expr = A.Index(expr, index, line=tok.line)
+            elif self.check(T.DOT):
+                tok = self.advance()
+                name = self.expect(T.NAME, "expected a property or method name after '.'").value
+                expr = A.Get(expr, name, line=tok.line)
             else:
                 break
         return expr
@@ -263,6 +350,10 @@ class Parser:
             return A.NilLit(line=tok.line)
         if self.match(T.NAME):
             return A.NameExpr(tok.value, line=tok.line)
+        if self.match(T.SELF):
+            return A.NameExpr("self", line=tok.line)
+        if self.match(T.SUPER):
+            return A.SuperExpr(line=tok.line)
         if self.match(T.LPAREN):
             expr = self.parse_expr()
             self.expect(T.RPAREN, "expected ')' to close the expression")
