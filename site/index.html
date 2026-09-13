@@ -1,0 +1,444 @@
+<title>Quill</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink-900: #14161d;
+    --ink-800: #1c1f28;
+    --ink-700: #262a35;
+    --ink-600: #343947;
+    --paper: #eef1ee;
+    --paper-dim: #c7cdc6;
+    --brass: #c39a5c;
+    --brass-bright: #ddb877;
+    --oxblood: #b1555b;
+    --text: #e8eae6;
+    --text-dim: #9aa0a6;
+    --rule: rgba(238, 241, 238, 0.09);
+
+    --display: "Fraunces", Georgia, "Times New Roman", serif;
+    --body: "IBM Plex Sans", -apple-system, "Segoe UI", sans-serif;
+    --mono: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+  }
+
+  * { box-sizing: border-box; }
+  html { background: var(--ink-900); }
+
+  body {
+    margin: 0;
+    background: var(--ink-900);
+    color: var(--text);
+    font-family: var(--body);
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::selection { background: var(--brass); color: var(--ink-900); }
+
+  a { color: inherit; }
+
+  .wrap {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 0 28px;
+  }
+
+  /* ---------- header ---------- */
+
+  header.site {
+    padding-block: 26px;
+    border-bottom: 1px solid var(--rule);
+  }
+  header.site .wrap {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 20px;
+    letter-spacing: 0.01em;
+  }
+  .brand svg { width: 22px; height: 22px; flex-shrink: 0; }
+  nav.site { display: flex; gap: 28px; font-size: 14px; color: var(--text-dim); }
+  nav.site span { cursor: default; }
+
+  /* ---------- hero ---------- */
+
+  .hero { padding-block: 76px 84px; }
+  .hero .wrap {
+    display: grid;
+    grid-template-columns: 1.05fr 0.95fr;
+    gap: 56px;
+    align-items: center;
+  }
+  @media (max-width: 860px) {
+    .hero .wrap { grid-template-columns: 1fr; }
+    .hero { padding-block: 48px 56px; }
+  }
+
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--brass-bright);
+    margin-bottom: 20px;
+  }
+  .eyebrow::before {
+    content: "";
+    width: 16px; height: 1px;
+    background: var(--brass-bright);
+  }
+
+  h1 {
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: clamp(38px, 5vw, 58px);
+    line-height: 1.06;
+    margin: 0 0 22px;
+    text-wrap: balance;
+  }
+  h1 em {
+    font-style: italic;
+    font-weight: 400;
+    color: var(--brass-bright);
+    position: relative;
+  }
+  .ink-underline {
+    display: block;
+    width: 168px;
+    max-width: 60%;
+    height: 10px;
+    margin: 4px 0 26px;
+  }
+  .ink-underline path {
+    fill: none;
+    stroke: var(--brass);
+    stroke-width: 2.5;
+    stroke-linecap: round;
+  }
+
+  p.lede {
+    font-size: 18px;
+    color: var(--text-dim);
+    max-width: 46ch;
+    margin: 0 0 30px;
+  }
+  p.lede strong { color: var(--text); font-weight: 600; }
+
+  .cta-row { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .cmd {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--mono);
+    font-size: 14px;
+    background: var(--ink-800);
+    border: 1px solid var(--ink-600);
+    border-radius: 8px;
+    padding: 11px 16px;
+  }
+  .cmd .prompt { color: var(--brass-bright); }
+  .cta-note { font-size: 13px; color: var(--text-dim); }
+
+  /* ---------- code panel ---------- */
+
+  .ledger {
+    background: var(--ink-800);
+    border: 1px solid var(--ink-600);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 30px 60px -30px rgba(0,0,0,0.6);
+  }
+  .ledger-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--ink-600);
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+  .ledger-head .dots { display: flex; gap: 6px; }
+  .ledger-head .dots span {
+    width: 8px; height: 8px; border-radius: 50%; background: var(--ink-600);
+  }
+  .ledger pre {
+    margin: 0;
+    padding: 22px 24px 26px;
+    font-family: var(--mono);
+    font-size: 13.5px;
+    line-height: 1.85;
+    overflow-x: auto;
+    background-image: repeating-linear-gradient(
+      to bottom,
+      transparent,
+      transparent 27px,
+      var(--rule) 28px
+    );
+    background-position: 0 6px;
+  }
+  .kw { color: var(--brass-bright); }
+  .cls { color: #8fb4a8; }
+  .str { color: #c98f8f; }
+  .num { color: #9ab3d6; }
+  .cmt { color: var(--text-dim); font-style: italic; }
+  .fn { color: var(--text); font-weight: 600; }
+
+  /* ---------- sections on paper ---------- */
+
+  section.paper {
+    background: var(--paper);
+    color: var(--ink-900);
+  }
+  section.paper .wrap { padding-block: 72px; }
+  section.paper .kicker {
+    font-family: var(--mono);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #6b6f66;
+    margin: 0 0 10px;
+  }
+  section.paper h2 {
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: clamp(26px, 3.2vw, 34px);
+    margin: 0 0 40px;
+    max-width: 24ch;
+    text-wrap: balance;
+  }
+
+  .features {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0;
+    border-top: 1px solid rgba(20,22,29,0.12);
+  }
+  @media (max-width: 760px) {
+    .features { grid-template-columns: 1fr; }
+  }
+  .feature {
+    padding: 26px 26px 26px 0;
+    border-bottom: 1px solid rgba(20,22,29,0.12);
+  }
+  .features .feature:nth-child(3n+1),
+  .features .feature:nth-child(3n+2) {
+    border-right: 1px solid rgba(20,22,29,0.12);
+    padding-right: 26px;
+  }
+  @media (max-width: 760px) {
+    .features .feature { border-right: none !important; padding-right: 0; }
+  }
+  .feature .num {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--oxblood);
+    display: block;
+    margin-bottom: 10px;
+  }
+  .feature h3 {
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 18px;
+    margin: 0 0 8px;
+  }
+  .feature p {
+    margin: 0;
+    font-size: 14.5px;
+    color: #45483f;
+    max-width: 34ch;
+  }
+
+  /* ---------- proof ---------- */
+
+  section.proof { background: var(--ink-800); border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
+  section.proof .wrap { padding-block: 64px; }
+  .proof-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+  }
+  @media (max-width: 760px) { .proof-grid { grid-template-columns: 1fr; } }
+  .proof-card {
+    background: var(--ink-900);
+    border: 1px solid var(--ink-600);
+    border-radius: 12px;
+    padding: 24px 26px;
+  }
+  .proof-card .tag {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--brass-bright);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .proof-card h3 {
+    font-family: var(--display);
+    font-size: 20px;
+    font-weight: 600;
+    margin: 10px 0 10px;
+  }
+  .proof-card p { margin: 0; color: var(--text-dim); font-size: 14.5px; }
+
+  /* ---------- footer ---------- */
+
+  footer.site { padding-block: 44px; }
+  footer.site .wrap {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+  footer.site .flourish { width: 90px; height: 8px; }
+  footer.site .flourish path { fill: none; stroke: var(--ink-600); stroke-width: 2; stroke-linecap: round; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .reveal {
+      animation: rise 0.7s ease-out both;
+    }
+    .reveal.d2 { animation-delay: 0.08s; }
+    .reveal.d3 { animation-delay: 0.16s; }
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  }
+</style>
+
+<header class="site">
+  <div class="wrap">
+    <div class="brand">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M20.5 3.5C14 3.5 6 9 3.5 20.5c9.5-1.5 15.5-7 17-13.5" stroke="var(--brass-bright)" stroke-width="1.6" stroke-linecap="round"/>
+        <path d="M3.5 20.5L9 15" stroke="var(--brass-bright)" stroke-width="1.6" stroke-linecap="round"/>
+      </svg>
+      Quill
+    </div>
+    <nav class="site">
+      <span>lang. reference</span>
+      <span>0.1</span>
+    </nav>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="wrap">
+    <div class="reveal">
+      <div class="eyebrow">a general-purpose language</div>
+      <h1>Write it once,<br><em>read it back</em> like prose.</h1>
+      <svg class="ink-underline" viewBox="0 0 168 10" preserveAspectRatio="none">
+        <path d="M2 7 C 40 2, 80 9, 120 4 S 160 6, 166 3"/>
+      </svg>
+      <p class="lede">
+        Quill is a small language for building real things — <strong>classes, exceptions,
+        a module system, and its own web server</strong> — with syntax meant to be
+        read at a glance, not decoded.
+      </p>
+      <div class="cta-row">
+        <div class="cmd"><span class="prompt">&gt;</span> quill</div>
+        <span class="cta-note">opens a REPL — no build step, no config</span>
+      </div>
+    </div>
+
+    <div class="ledger reveal d2">
+      <div class="ledger-head">
+        <span>task.ql</span>
+        <div class="dots"><span></span><span></span><span></span></div>
+      </div>
+      <pre><span class="kw">class</span> <span class="cls">Task</span>:
+    <span class="kw">pull</span> <span class="fn">init</span>(title):
+        self.title = title
+        self.done = <span class="kw">false</span>
+
+    <span class="kw">pull</span> <span class="fn">complete</span>():
+        self.done = <span class="kw">true</span>
+        <span class="kw">return</span> f<span class="str">"{self.title} - done"</span>
+
+<span class="cmt"># first-class functions, real closures</span>
+<span class="kw">let</span> tasks = [Task(<span class="str">"Write docs"</span>), Task(<span class="str">"Ship it"</span>)]
+<span class="kw">for</span> t <span class="kw">in</span> tasks:
+    print(t.<span class="fn">complete</span>())</pre>
+    </div>
+  </div>
+</section>
+
+<section class="paper">
+  <div class="wrap">
+    <p class="kicker">What's actually in it</p>
+    <h2>Not a toy grammar bolted onto a calculator.</h2>
+    <div class="features">
+      <div class="feature">
+        <span class="num">01</span>
+        <h3>Classes, properly</h3>
+        <p>Fields, methods, single inheritance, and <code>super.method()</code> that resolves correctly through arbitrarily deep chains.</p>
+      </div>
+      <div class="feature">
+        <span class="num">02</span>
+        <h3>Exceptions that mean it</h3>
+        <p><code>try / except / finally</code> catches your own <code>raise</code>s and built-in runtime errors alike — the same way, every time.</p>
+      </div>
+      <div class="feature">
+        <span class="num">03</span>
+        <h3>A module system</h3>
+        <p><code>import "file.ql" as name</code> — code that outgrows one file doesn't have to live in one file.</p>
+      </div>
+      <div class="feature">
+        <span class="num">04</span>
+        <h3>A standard library with teeth</h3>
+        <p>String, list, and map methods that chain — <code>.trim().upper().split()</code> — plus file I/O and 20-odd built-ins.</p>
+      </div>
+      <div class="feature">
+        <span class="num">05</span>
+        <h3>Ships its own web server</h3>
+        <p><code>serve(port, handler)</code> turns a Quill function into real HTTP responses. No framework to install first.</p>
+      </div>
+      <div class="feature">
+        <span class="num">06</span>
+        <h3>Errors with a line number</h3>
+        <p>Every failure mode — bad syntax, a missing file, a divide by zero — reports plainly. Never a foreign stack trace.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="proof">
+  <div class="wrap">
+    <p class="kicker" style="font-family:var(--mono);font-size:11.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);margin:0 0 22px;">Proven on real programs, not snippets</p>
+    <div class="proof-grid">
+      <div class="proof-card reveal">
+        <span class="tag">CLI app</span>
+        <h3>A persistent task manager</h3>
+        <p>Add, complete, and remove tasks from a terminal menu. Saves to disk, reloads on the next run, and catches a bad menu choice without crashing.</p>
+      </div>
+      <div class="proof-card reveal d2">
+        <span class="tag">Website</span>
+        <h3>The same app, in a browser</h3>
+        <p>Same task class, same storage format, a form and two buttons instead of a menu — served entirely by Quill's own <code>serve()</code>, no framework underneath.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="site">
+  <div class="wrap">
+    <span>Quill — a language for writing programs, not fighting a compiler.</span>
+    <svg class="flourish" viewBox="0 0 90 8" preserveAspectRatio="none"><path d="M1 5 C 20 1, 45 7, 66 3 S 85 5, 89 2"/></svg>
+  </div>
+</footer>

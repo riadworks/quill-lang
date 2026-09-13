@@ -258,6 +258,89 @@ def build_globals() -> Environment:
         _arity("url_encode", args, line, 1)
         return urllib.parse.quote(quill_str(args[0]))
 
+    def _to_json_safe(value, line):
+        # Quill's own runtime types (dict/list/str/int/float/bool/None) already match
+        # Python's json module's expectations exactly - the one thing that needs
+        # rejecting explicitly is a function/class/instance, which json would otherwise
+        # fail on with a confusing native TypeError instead of a clear Quill error.
+        if isinstance(value, (str, int, float, bool)) or value is None:
+            return value
+        if isinstance(value, list):
+            return [_to_json_safe(v, line) for v in value]
+        if isinstance(value, dict):
+            return {str(k): _to_json_safe(v, line) for k, v in value.items()}
+        raise RuntimeErr(f"json_encode() can't serialize a {type_name(value)}", line)
+
+    def b_json_encode(args, line):
+        import json
+
+        _arity("json_encode", args, line, 1, 2)
+        pretty = len(args) == 2 and args[1]
+        safe = _to_json_safe(args[0], line)
+        return json.dumps(safe, indent=2 if pretty else None)
+
+    def b_json_decode(args, line):
+        import json
+
+        _arity("json_decode", args, line, 1)
+        text = args[0]
+        if not isinstance(text, str):
+            raise RuntimeErr(f"json_decode() expects a string, got {type_name(text)}", line)
+        try:
+            return json.loads(text)
+        except json.JSONDecodeError as exc:
+            raise RuntimeErr(f"invalid JSON: {exc.msg}", line)
+
+    def b_sha256(args, line):
+        import hashlib
+
+        _arity("sha256", args, line, 1)
+        text = args[0]
+        if not isinstance(text, str):
+            raise RuntimeErr(f"sha256() expects a string, got {type_name(text)}", line)
+        return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+    def b_random(args, line):
+        import random as _random
+
+        _arity("random", args, line, 0)
+        return _random.random()
+
+    def b_random_int(args, line):
+        import random as _random
+
+        _arity("random_int", args, line, 2)
+        lo = int(_require_number("random_int", args[0], line))
+        hi = int(_require_number("random_int", args[1], line))
+        return _random.randint(lo, hi)
+
+    def b_random_choice(args, line):
+        import random as _random
+
+        _arity("random_choice", args, line, 1)
+        lst = _require_list("random_choice", args[0], line)
+        if not lst:
+            raise RuntimeErr("random_choice() on an empty list", line)
+        return _random.choice(lst)
+
+    def b_shuffle(args, line):
+        import random as _random
+
+        _arity("shuffle", args, line, 1)
+        lst = list(_require_list("shuffle", args[0], line))
+        _random.shuffle(lst)
+        return lst
+
+    def b_env_get(args, line):
+        import os
+
+        _arity("env_get", args, line, 1, 2)
+        name = args[0]
+        if not isinstance(name, str):
+            raise RuntimeErr(f"env_get() expects a string name, got {type_name(name)}", line)
+        default = args[1] if len(args) == 2 else None
+        return os.environ.get(name, default)
+
     reg("print", b_print)
     reg("len", b_len)
     reg("type", b_type)
@@ -289,6 +372,14 @@ def build_globals() -> Environment:
     reg("file_exists", b_file_exists)
     reg("serve", b_serve)
     reg("url_encode", b_url_encode)
+    reg("json_encode", b_json_encode)
+    reg("json_decode", b_json_decode)
+    reg("sha256", b_sha256)
+    reg("random", b_random)
+    reg("random_int", b_random_int)
+    reg("random_choice", b_random_choice)
+    reg("shuffle", b_shuffle)
+    reg("env_get", b_env_get)
     env.declare("PI", 3.141592653589793)
 
     return env

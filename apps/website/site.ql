@@ -3,6 +3,12 @@ import "task.ql" as task_mod
 let SAVE_FILE = "tasks.txt"
 let PORT = 8080
 
+# The admin key is "quill-admin" - only its sha256 hash is stored here, the
+# same principle as a real password/API-key check: never keep the plaintext
+# around, only compare hashes. See README.md for how this route is meant to
+# be tried.
+let ADMIN_KEY_HASH = "c9753125971ff0b3a78d128aad524b1817ee1e5b3c2aec7495742ba8e02c67fa"
+
 pull load_tasks():
     let tasks = []
     if not file_exists(SAVE_FILE):
@@ -21,6 +27,9 @@ pull save_tasks(tasks):
 
 pull escape_html(s):
     return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+pull task_to_map(t):
+    return {"title": t.title, "priority": t.priority, "done": t.done}
 
 pull render_row(t, i):
     let done_class = " done" if t.done else ""
@@ -141,6 +150,19 @@ pull handle(req):
         tasks.pop(idx)
         save_tasks(tasks)
         return {"redirect": "/"}
+
+    if req["path"] == "/api/tasks" and req["method"] == "GET":
+        let out = []
+        for t in tasks:
+            out.push(task_to_map(t))
+        return {"body": json_encode(out, true), "content_type": "application/json"}
+
+    if req["path"] == "/api/wipe" and req["method"] == "POST":
+        let key = req["form"].get("key")
+        if key == nil or sha256(key) != ADMIN_KEY_HASH:
+            return {"status": 401, "body": json_encode({"error": "bad key"}), "content_type": "application/json"}
+        save_tasks([])
+        return {"body": json_encode({"ok": true, "wiped": len(tasks)}), "content_type": "application/json"}
 
     return {"status": 404, "body": "Not found", "content_type": "text/plain"}
 

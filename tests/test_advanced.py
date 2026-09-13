@@ -283,3 +283,72 @@ def test_input_strips_leading_bom(monkeypatch):
     monkeypatch.setattr("builtins.input", lambda prompt="": "﻿1")
     out = run('let choice = input("> ")\nprint(choice == "1")\n')
     assert out == "true\n"
+
+
+def test_json_round_trip():
+    out = run(
+        'let data = {"name": "Ada", "tags": ["math", "engine"], "active": true, "id": nil}\n'
+        "let text = json_encode(data)\n"
+        "let back = json_decode(text)\n"
+        'print(back["name"])\n'
+        'print(back["tags"])\n'
+        'print(back["active"])\n'
+        'print(back["id"])\n'
+    )
+    assert out == "Ada\n[\"math\", \"engine\"]\ntrue\nnil\n"
+
+
+def test_json_encode_pretty_flag_changes_formatting():
+    compact = run('print(json_encode({"a": 1}))\n')
+    pretty = run('print(json_encode({"a": 1}, true))\n')
+    assert compact == '{"a": 1}\n'
+    assert "\n" in pretty  # pretty-printed spans multiple lines
+
+
+def test_json_decode_invalid_json_error():
+    msg = run_expect_error('json_decode("{not valid json")\n')
+    assert "invalid JSON" in msg
+
+
+def test_json_encode_rejects_function():
+    msg = run_expect_error("pull f(): return 1\njson_encode(f)\n")
+    assert "json_encode" in msg
+
+
+def test_sha256_is_deterministic_and_hex():
+    out = run('print(sha256("hello"))\nprint(sha256("hello") == sha256("hello"))\nprint(sha256("hello") == sha256("world"))\n')
+    lines = out.splitlines()
+    assert len(lines[0]) == 64
+    assert all(c in "0123456789abcdef" for c in lines[0])
+    assert lines[1] == "true"
+    assert lines[2] == "false"
+
+
+def test_random_int_stays_in_range():
+    out = run(
+        "let ok = true\n"
+        "let i = 0\n"
+        "while i < 50:\n"
+        "    let n = random_int(1, 6)\n"
+        "    if n < 1 or n > 6:\n"
+        "        ok = false\n"
+        "    i += 1\n"
+        "print(ok)\n"
+    )
+    assert out == "true\n"
+
+
+def test_random_choice_and_shuffle_preserve_elements():
+    out = run(
+        "let xs = [1, 2, 3, 4, 5]\n"
+        "print(has(xs, random_choice(xs)))\n"
+        "let shuffled = shuffle(xs)\n"
+        "print(sorted(shuffled) == sorted(xs))\n"
+    )
+    assert out == "true\ntrue\n"
+
+
+def test_env_get_reads_and_defaults(monkeypatch):
+    monkeypatch.setenv("QUILL_TEST_VAR", "hi there")
+    out = run('print(env_get("QUILL_TEST_VAR"))\nprint(env_get("QUILL_NOPE", "fallback"))\n')
+    assert out == "hi there\nfallback\n"

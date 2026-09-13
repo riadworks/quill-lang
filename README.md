@@ -175,9 +175,21 @@ Paths are resolved relative to the importing file.
 `print`, `len`, `type`, `str`, `num`, `bool`, `range`, `input`, `push`, `pop`,
 `keys`, `values`, `items`, `has`, `sorted`, `sum`, `min`, `max`, `abs`,
 `round`, `slice`, `sqrt`, `floor`, `ceil`, `enumerate`, `zip`, `read_file`,
-`write_file`, `file_exists`, plus the constant `PI`. (The older top-level
-`push`/`pop`/`keys`/etc. and the newer `.push()`/`.pop()`/`.keys()` method
-forms both work and do the same thing — the methods are just nicer to chain.)
+`write_file`, `file_exists`, `serve`, `url_encode`, `json_encode`,
+`json_decode`, `sha256`, `random`, `random_int`, `random_choice`, `shuffle`,
+`env_get`, plus the constant `PI`. (The older top-level `push`/`pop`/`keys`/etc.
+and the newer `.push()`/`.pop()`/`.keys()` method forms both work and do the
+same thing — the methods are just nicer to chain.)
+
+`json_encode`/`json_decode` map directly onto Quill's own runtime values
+(lists, maps, strings, numbers, bools, nil are already exactly what Python's
+`json` module expects) - the one thing they can't handle is a class instance,
+which needs converting to a plain map first. `sha256` is there specifically
+so passwords/API keys never need to be compared or stored as plaintext - see
+`apps/website/`'s `/api/wipe` route for the actual pattern. `random`/
+`random_int`/`random_choice`/`shuffle` and `env_get` (for reading
+config/secrets from the environment instead of hardcoding them) round out
+what a real backend needs.
 
 ## What's deliberately not here yet
 
@@ -207,7 +219,7 @@ examples/           # hello, fib, closures, collections, fizzbuzz, classes,
                      # exceptions, methods_and_ops, mathutils + import_demo
 apps/tasks/         # a real CLI app, not just a demo script - see below
 apps/website/       # the same app, but as an actual website
-tests/              # 55 tests across the lexer and interpreter end-to-end
+tests/              # 64 tests across the lexer and interpreter end-to-end
 ```
 
 ## Real apps, not just demo scripts
@@ -244,8 +256,12 @@ addition first - Quill had no networking at all - so it now has a
 Quill function on top). Building the page's embedded CSS also exposed a
 real gap: f-strings had no way to write a literal `{` or `}` at all, so
 every CSS rule was being misread as an interpolation. Fixed with real
-brace-escaping (`{{`/`}}`, matching Python's own f-string convention) -
-see [`apps/website/README.md`](apps/website/README.md).
+brace-escaping (`{{`/`}}`, matching Python's own f-string convention).
+
+It also has a `GET /api/tasks` JSON endpoint and a `POST /api/wipe` route
+gated by a hashed admin key (`sha256()`, comparing hashes rather than
+plaintext) - see [`apps/website/README.md`](apps/website/README.md) for
+both.
 
 Every feature described above was actually run through the interpreter while
 building it, not just written and assumed to work. That process caught two

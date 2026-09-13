@@ -41,3 +41,26 @@ bad code produces a clean error, only wrapped *execution* in a
 try/except — an error raised while lexing or parsing (like this
 brace-escaping bug's edge case) skipped past it entirely, uncaught. Fixed
 the helper to wrap all three stages.
+
+## Backend and security: two more routes
+
+Two routes exist purely to demonstrate that Quill can do this properly, not
+just serve HTML:
+
+- **`GET /api/tasks`** — the same task list as JSON, via the new
+  `json_encode()`/`json_decode()` builtins (they map directly onto Quill's
+  own list/map/string/number/bool/nil runtime values, so most values need no
+  conversion at all — only class instances do, hence `task_to_map()`).
+  Try it: `curl http://127.0.0.1:8080/api/tasks`
+- **`POST /api/wipe`** — clears every task, but only with the right key.
+  The key is `"quill-admin"`; the script only ever stores its `sha256()`
+  hash and compares hashes, never the plaintext — the same principle real
+  password/API-key checks use. Try it:
+  ```powershell
+  Invoke-WebRequest http://127.0.0.1:8080/api/wipe -Method Post -Body "key=quill-admin" -ContentType "application/x-www-form-urlencoded"
+  ```
+  A wrong key gets a `401`, not a crash.
+
+Both were verified against a live running server with real HTTP requests
+(including the wrong-key case) before being considered done, same as
+every other route in this app.
