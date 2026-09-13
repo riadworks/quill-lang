@@ -56,7 +56,30 @@ class Interpreter:
 
     def exec_LetStmt(self, stmt: A.LetStmt, env):
         value = self.evaluate(stmt.expr, env)
-        env.declare(stmt.name, value)
+        if len(stmt.names) == 1:
+            env.declare(stmt.names[0], value)
+        else:
+            for name, item in self._unpack(stmt.names, value, stmt.line):
+                env.declare(name, item)
+
+    def exec_UnpackAssignStmt(self, stmt: A.UnpackAssignStmt, env):
+        value = self.evaluate(stmt.expr, env)
+        for name, item in self._unpack(stmt.names, value, stmt.line):
+            env.assign(name, item, stmt.line)
+
+    def _unpack(self, names, value, line):
+        """Shared by `let a, b = ...` and bare `a, b = ...` - splits a list value
+        into (name, item) pairs, matching Python's "too many/few values to
+        unpack" behavior instead of silently truncating or padding with nil."""
+        if not isinstance(value, list):
+            raise RuntimeErr(f"cannot unpack a {type_name(value)} into {len(names)} names", line)
+        if len(value) != len(names):
+            raise RuntimeErr(
+                f"too {'many' if len(value) > len(names) else 'few'} values to unpack "
+                f"(expected {len(names)}, got {len(value)})",
+                line,
+            )
+        return list(zip(names, value))
 
     def exec_AssignStmt(self, stmt: A.AssignStmt, env):
         value = self.evaluate(stmt.expr, env)
@@ -162,9 +185,14 @@ class Interpreter:
     def exec_ForStmt(self, stmt: A.ForStmt, env):
         iterable = self.evaluate(stmt.iterable, env)
         items = self._to_iterable(iterable, stmt.line)
+        single = len(stmt.var_names) == 1
         for item in items:
             loop_env = Environment(env)
-            loop_env.declare(stmt.var_name, item)
+            if single:
+                loop_env.declare(stmt.var_names[0], item)
+            else:
+                for name, value in self._unpack(stmt.var_names, item, stmt.line):
+                    loop_env.declare(name, value)
             try:
                 self._exec_block(stmt.body, loop_env)
             except BreakSignal:
@@ -231,6 +259,41 @@ class Interpreter:
             if not isinstance(key, (str, int, float, bool)):
                 raise RuntimeErr(f"map keys must be a string, number, or bool, not {type_name(key)}", expr.line)
             result[key] = self.evaluate(value_expr, env)
+        return result
+
+    def _run_comprehension(self, clauses, index, env, on_match):
+        """Recursively binds each clause's loop variable (checking its own filter
+        condition right after binding, like nested for-loops), calling on_match(env)
+        once per combination that satisfies every clause - supports chained
+        `for x in a for y in b if ...` the same way Python's comprehensions do."""
+        if index == len(clauses):
+            on_match(env)
+            return
+        clause = clauses[index]
+        iterable = self.evaluate(clause.iterable, env)
+        items = self._to_iterable(iterable, clause.line)
+        for item in items:
+            child_env = Environment(env)
+            child_env.declare(clause.var_name, item)
+            if clause.condition is not None and not is_truthy(self.evaluate(clause.condition, child_env)):
+                continue
+            self._run_comprehension(clauses, index + 1, child_env, on_match)
+
+    def eval_ListComp(self, expr: A.ListComp, env):
+        result = []
+        self._run_comprehension(expr.clauses, 0, env, lambda e: result.append(self.evaluate(expr.expr, e)))
+        return result
+
+    def eval_MapComp(self, expr: A.MapComp, env):
+        result = {}
+
+        def collect(final_env):
+            key = self.evaluate(expr.key_expr, final_env)
+            if not isinstance(key, (str, int, float, bool)):
+                raise RuntimeErr(f"map keys must be a string, number, or bool, not {type_name(key)}", expr.line)
+            result[key] = self.evaluate(expr.value_expr, final_env)
+
+        self._run_comprehension(expr.clauses, 0, env, collect)
         return result
 
     def eval_NameExpr(self, expr: A.NameExpr, env):

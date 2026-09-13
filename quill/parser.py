@@ -106,10 +106,12 @@ class Parser:
 
     def parse_let(self):
         tok = self.advance()
-        name = self.expect(T.NAME, "expected a variable name after 'let'").value
+        names = [self.expect(T.NAME, "expected a variable name after 'let'").value]
+        while self.match(T.COMMA):
+            names.append(self.expect(T.NAME, "expected a variable name").value)
         self.expect(T.EQ, "expected '=' after variable name")
         expr = self.parse_expr()
-        return A.LetStmt(name, expr, line=tok.line)
+        return A.LetStmt(names, expr, line=tok.line)
 
     def parse_params(self):
         params = []
@@ -127,7 +129,7 @@ class Parser:
         params = self.parse_params()
         body = self.parse_block()
         fn = A.FnExpr(params, body, name=name, line=tok.line)
-        return A.LetStmt(name, fn, line=tok.line)
+        return A.LetStmt([name], fn, line=tok.line)
 
     def parse_if(self):
         tok = self.advance()
@@ -154,11 +156,13 @@ class Parser:
 
     def parse_for(self):
         tok = self.advance()
-        name = self.expect(T.NAME, "expected a loop variable name").value
+        names = [self.expect(T.NAME, "expected a loop variable name").value]
+        while self.match(T.COMMA):
+            names.append(self.expect(T.NAME, "expected a loop variable name").value)
         self.expect(T.IN, "expected 'in' after loop variable")
         iterable = self.parse_expr()
         body = self.parse_block()
-        return A.ForStmt(name, iterable, body, line=tok.line)
+        return A.ForStmt(names, iterable, body, line=tok.line)
 
     def parse_return(self):
         tok = self.advance()
@@ -169,6 +173,21 @@ class Parser:
 
     def parse_expr_or_assign_stmt(self):
         expr = self.parse_expr()
+
+        if self.check(T.COMMA):
+            # bare multi-target assignment: `a, b = pair` (reassigns existing names,
+            # no `let`). A bare comma at statement level has no other valid meaning
+            # here - list/map/call commas are all already bounded by their own
+            # brackets/parens - so this is unambiguous.
+            if not isinstance(expr, A.NameExpr):
+                raise ParseError("invalid assignment target", expr.line)
+            names = [expr.name]
+            while self.match(T.COMMA):
+                names.append(self.expect(T.NAME, "expected a variable name").value)
+            self.expect(T.EQ, "expected '=' for a multi-target assignment")
+            value = self.parse_expr()
+            return A.UnpackAssignStmt(names, value, line=expr.line)
+
         if self.match(T.EQ):
             if not isinstance(expr, (A.NameExpr, A.Index, A.Get)):
                 raise ParseError("invalid assignment target", expr.line)
@@ -369,25 +388,46 @@ class Parser:
 
     def parse_list_lit(self):
         tok = self.advance()
-        elements = []
-        if not self.check(T.RBRACKET):
+        if self.check(T.RBRACKET):
+            self.advance()
+            return A.ListLit([], line=tok.line)
+
+        first = self.parse_expr()
+        if self.check(T.FOR):
+            clauses = self._parse_comprehension_clauses()
+            node = A.ListComp(first, clauses, line=tok.line)
+            self.expect(T.RBRACKET, "expected ']' after list comprehension")
+            return node
+
+        elements = [first]
+        while self.match(T.COMMA):
+            if self.check(T.RBRACKET):
+                break
             elements.append(self.parse_expr())
-            while self.match(T.COMMA):
-                if self.check(T.RBRACKET):
-                    break
-                elements.append(self.parse_expr())
         self.expect(T.RBRACKET, "expected ']' after list")
         return A.ListLit(elements, line=tok.line)
 
     def parse_map_lit(self):
         tok = self.advance()
-        pairs = []
-        if not self.check(T.RBRACE):
+        if self.check(T.RBRACE):
+            self.advance()
+            return A.MapLit([], line=tok.line)
+
+        first_key = self.parse_expr()
+        self.expect(T.COLON, "expected ':' between map key and value")
+        first_value = self.parse_expr()
+
+        if self.check(T.FOR):
+            clauses = self._parse_comprehension_clauses()
+            node = A.MapComp(first_key, first_value, clauses, line=tok.line)
+            self.expect(T.RBRACE, "expected '}' after map comprehension")
+            return node
+
+        pairs = [(first_key, first_value)]
+        while self.match(T.COMMA):
+            if self.check(T.RBRACE):
+                break
             pairs.append(self._parse_map_pair())
-            while self.match(T.COMMA):
-                if self.check(T.RBRACE):
-                    break
-                pairs.append(self._parse_map_pair())
         self.expect(T.RBRACE, "expected '}' after map")
         return A.MapLit(pairs, line=tok.line)
 
@@ -396,6 +436,23 @@ class Parser:
         self.expect(T.COLON, "expected ':' between map key and value")
         value = self.parse_expr()
         return (key, value)
+
+    def _parse_comprehension_clauses(self):
+        """Parses one or more `for NAME in expr (if expr)?` clauses, chained - e.g.
+        `for x in a for y in b if x != y` - shared by list and map comprehensions."""
+        clauses = []
+        while self.check(T.FOR):
+            tok = self.advance()
+            var_name = self.expect(T.NAME, "expected a loop variable name").value
+            self.expect(T.IN, "expected 'in' after comprehension loop variable")
+            # parse_or, not parse_expr: avoid swallowing a trailing 'if' as a ternary
+            iterable = self.parse_or()
+            condition = None
+            if self.check(T.IF):
+                self.advance()
+                condition = self.parse_or()
+            clauses.append(A.CompClause(var_name, iterable, condition, line=tok.line))
+        return clauses
 
     def parse_fn_expr(self):
         tok = self.advance()

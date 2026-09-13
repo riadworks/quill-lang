@@ -43,6 +43,29 @@ class MapLit:
 
 
 @dataclass
+class CompClause:
+    var_name: str
+    iterable: object
+    condition: Optional[object] = None
+    line: int = 0
+
+
+@dataclass
+class ListComp:
+    expr: object
+    clauses: list  # list of CompClause - supports [x*y for x in a for y in b if ...]
+    line: int = 0
+
+
+@dataclass
+class MapComp:
+    key_expr: object
+    value_expr: object
+    clauses: list
+    line: int = 0
+
+
+@dataclass
 class NameExpr:
     name: str
     line: int = 0
@@ -123,14 +146,21 @@ class ExprStmt:
 
 @dataclass
 class LetStmt:
-    name: str
+    names: list  # list[str] - length 1 for `let x = ...`, more for `let a, b = pair`
     expr: object
     line: int = 0
 
 
 @dataclass
 class AssignStmt:
-    target: object  # NameExpr or Index
+    target: object  # NameExpr, Index, or Get
+    expr: object
+    line: int = 0
+
+
+@dataclass
+class UnpackAssignStmt:
+    names: list  # list[str] - bare `a, b = pair` (reassigns existing names, no `let`)
     expr: object
     line: int = 0
 
@@ -151,7 +181,7 @@ class WhileStmt:
 
 @dataclass
 class ForStmt:
-    var_name: str
+    var_names: list  # list[str] - length 1 for `for x in xs:`, more for `for k, v in pairs:`
     iterable: object
     body: list
     line: int = 0

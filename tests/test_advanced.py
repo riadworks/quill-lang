@@ -1,3 +1,5 @@
+import pytest
+
 from tests.helpers import run, run_expect_error
 
 
@@ -283,6 +285,146 @@ def test_input_strips_leading_bom(monkeypatch):
     monkeypatch.setattr("builtins.input", lambda prompt="": "﻿1")
     out = run('let choice = input("> ")\nprint(choice == "1")\n')
     assert out == "true\n"
+
+
+def test_list_comprehension_basic_and_filtered():
+    out = run(
+        "let nums = [1, 2, 3, 4, 5]\n"
+        "print([x * x for x in nums])\n"
+        "print([x for x in nums if x % 2 == 0])\n"
+    )
+    assert out == "[1, 4, 9, 16, 25]\n[2, 4]\n"
+
+
+def test_list_comprehension_with_ternary_output_expr():
+    # the ternary's own `if ... else ...` must not be confused with the
+    # comprehension's filter `if` - disambiguated by parse order (the output
+    # expression, ternary included, is fully parsed before checking for `for`).
+    out = run("print([x if x % 2 == 0 else -x for x in [1, 2, 3, 4]])\n")
+    assert out == "[-1, 2, -3, 4]\n"
+
+
+def test_map_comprehension():
+    out = run('print({x: x * x for x in [1, 2, 3] if x > 1})\n')
+    assert out == "{2: 4, 3: 9}\n"
+
+
+def test_multi_clause_comprehension_is_a_cartesian_product():
+    out = run("print([[x, y] for x in [1, 2] for y in [10, 20]])\n")
+    assert out == "[[1, 10], [1, 20], [2, 10], [2, 20]]\n"
+
+
+def test_multi_clause_comprehension_with_filter_referencing_both_vars():
+    out = run("print([x + y for x in [1, 2, 3] for y in [1, 2, 3] if x != y])\n")
+    assert out == "[3, 4, 3, 5, 4, 5]\n"
+
+
+def test_comprehension_scopes_loop_var_without_leaking():
+    msg = run_expect_error("let sq = [x * x for x in [1, 2, 3]]\nprint(x)\n")
+    assert "undefined variable" in msg
+
+
+def test_let_destructuring():
+    out = run("let pair = [1, 2]\nlet a, b = pair\nprint(a)\nprint(b)\n")
+    assert out == "1\n2\n"
+
+
+def test_bare_destructuring_assignment_can_swap():
+    out = run("let a = 1\nlet b = 2\na, b = [b, a]\nprint(a)\nprint(b)\n")
+    assert out == "2\n1\n"
+
+
+def test_for_loop_destructuring_over_map_items():
+    out = run('let m = {"x": 10, "y": 20}\nfor k, v in items(m):\n    print(f"{k}={v}")\n')
+    assert out == "x=10\ny=20\n"
+
+
+def test_for_loop_destructuring_over_list_of_pairs():
+    out = run("for a, b in [[1, 2], [3, 4]]:\n    print(a + b)\n")
+    assert out == "3\n7\n"
+
+
+def test_destructuring_wrong_count_is_a_clear_error():
+    msg = run_expect_error("let a, b, c = [1, 2]\n")
+    assert "too few values to unpack" in msg
+    assert "expected 3, got 2" in msg
+
+
+def test_destructuring_non_list_is_a_clear_error():
+    msg = run_expect_error("let a, b = 5\n")
+    assert "cannot unpack" in msg
+
+
+class _EchoHandler:
+    """A minimal real HTTP server (stdlib http.server) used to test http_get/
+    http_post against an actual socket, not a mock - the same way apps/website's
+    serve() route tests worked."""
+
+    @staticmethod
+    def make():
+        import http.server
+
+        class Handler(http.server.BaseHTTPRequestHandler):
+            def do_GET(self):
+                body = b'{"ok": true}'
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+
+            def do_POST(self):
+                length = int(self.headers.get("Content-Length", 0))
+                received = self.rfile.read(length)
+                self.send_response(200)
+                self.send_header("Content-Type", "text/plain")
+                self.send_header("Content-Length", str(len(received)))
+                self.end_headers()
+                self.wfile.write(received)
+
+            def log_message(self, fmt, *args):
+                pass
+
+        return Handler
+
+
+@pytest.fixture
+def echo_server():
+    import http.server
+    import threading
+
+    server = http.server.HTTPServer(("127.0.0.1", 0), _EchoHandler.make())
+    port = server.server_address[1]
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    yield port
+    server.shutdown()
+    thread.join(timeout=2)
+
+
+def test_http_get_against_a_real_server(echo_server):
+    out = run(f'let r = http_get("http://127.0.0.1:{echo_server}/anything")\nprint(r["status"])\nprint(r["body"])\n')
+    assert out == '200\n{"ok": true}\n'
+
+
+def test_http_post_sends_form_encoded_body(echo_server):
+    out = run(
+        f'let r = http_post("http://127.0.0.1:{echo_server}/anything", {{"name": "Ada"}})\n'
+        'print(r["status"])\nprint(r["body"])\n'
+    )
+    assert out == "200\nname=Ada\n"
+
+
+def test_http_get_unreachable_host_is_a_clear_error():
+    # port 1 on localhost should reliably refuse a connection rather than
+    # timing out this test suite
+    msg = run_expect_error('http_get("http://127.0.0.1:1/")\n')
+    assert "http_get() failed" in msg
+
+
+def test_destructuring_non_list_is_a_clear_error():
+    msg = run_expect_error("let a, b = 5\n")
+    assert "cannot unpack" in msg
 
 
 def test_json_round_trip():

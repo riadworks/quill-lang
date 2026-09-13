@@ -258,6 +258,50 @@ def build_globals() -> Environment:
         _arity("url_encode", args, line, 1)
         return urllib.parse.quote(quill_str(args[0]))
 
+    def _headers_to_dict(headers, who, line):
+        if headers is None:
+            return {}
+        if not isinstance(headers, dict):
+            raise RuntimeErr(f"{who}() headers argument must be a map, got {type_name(headers)}", line)
+        return {str(k): quill_str(v) for k, v in headers.items()}
+
+    def _do_http_request(method, url, body_bytes, headers, line):
+        import urllib.error
+        import urllib.request
+
+        if not isinstance(url, str):
+            raise RuntimeErr(f"http_{method.lower()}() expects a string URL, got {type_name(url)}", line)
+        req = urllib.request.Request(url, data=body_bytes, headers=headers, method=method)
+        try:
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                raw = resp.read().decode("utf-8", errors="replace")
+                return {"status": resp.status, "body": raw, "headers": dict(resp.headers)}
+        except urllib.error.HTTPError as exc:
+            raw = exc.read().decode("utf-8", errors="replace")
+            return {"status": exc.code, "body": raw, "headers": dict(exc.headers or {})}
+        except urllib.error.URLError as exc:
+            raise RuntimeErr(f"http_{method.lower()}() failed: {exc.reason}", line)
+
+    def b_http_get(args, line):
+        _arity("http_get", args, line, 1, 2)
+        headers = _headers_to_dict(args[1] if len(args) == 2 else None, "http_get", line)
+        return _do_http_request("GET", args[0], None, headers, line)
+
+    def b_http_post(args, line):
+        _arity("http_post", args, line, 2, 3)
+        headers = _headers_to_dict(args[2] if len(args) == 3 else None, "http_post", line)
+        body = args[1]
+        if isinstance(body, dict):
+            import urllib.parse
+
+            body_bytes = urllib.parse.urlencode({str(k): quill_str(v) for k, v in body.items()}).encode("utf-8")
+            headers.setdefault("Content-Type", "application/x-www-form-urlencoded")
+        elif isinstance(body, str):
+            body_bytes = body.encode("utf-8")
+        else:
+            raise RuntimeErr(f"http_post() body must be a string or a map, got {type_name(body)}", line)
+        return _do_http_request("POST", args[0], body_bytes, headers, line)
+
     def _to_json_safe(value, line):
         # Quill's own runtime types (dict/list/str/int/float/bool/None) already match
         # Python's json module's expectations exactly - the one thing that needs
@@ -380,6 +424,8 @@ def build_globals() -> Environment:
     reg("random_choice", b_random_choice)
     reg("shuffle", b_shuffle)
     reg("env_get", b_env_get)
+    reg("http_get", b_http_get)
+    reg("http_post", b_http_post)
     env.declare("PI", 3.141592653589793)
 
     return env

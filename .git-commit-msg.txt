@@ -1,0 +1,50 @@
+Add comprehensions, destructuring, and an HTTP client
+
+User feedback: "as big as Python" - not literally achievable (that's
+several decades and 500,000 packages, not a coding session), but these
+three close real gaps in core language capability rather than stdlib
+breadth, which is the part that's actually reachable.
+
+List/map comprehensions: [expr for x in xs if cond] and
+{k: v for x in xs if cond}, including chained multi-clause form
+(for x in a for y in b if ...) matching Python's actual cartesian-product
+semantics, not just a single-loop simplification. Disambiguating a
+comprehension's output-expression ternary (x if c else y for x in xs)
+from its filter if falls out naturally from parse order: the output
+expression, ternary included, is fully parsed before checking whether a
+'for' follows.
+
+Destructuring: let a, b = pair, bare a, b = pair (reassignment, no let -
+verified it can do a real swap: a, b = [b, a]), and for k, v in pairs:
+(pairs directly with items() so map iteration destructures for free).
+Wrong element count raises a clear "too few/many values to unpack"
+error instead of silently truncating, padding with nil, or crashing with
+an unrelated index error.
+
+HTTP client: http_get(url, headers?) and http_post(url, body, headers?),
+via urllib.request from Python's own standard library - no new
+dependency, same bridge-to-stdlib philosophy as serve() bridging to
+http.server. Quill could previously only receive HTTP requests, never
+make them, which ruled out anything that calls an external API.
+
+Verified http_get/http_post against a real, separately-running Quill
+serve() instance (not a mock) - GET, POST with form-encoded data,
+and a 404 - proving the two new networking directions actually
+interoperate, not just pass isolated unit tests. The pytest suite
+does the same with a real stdlib http.server fixture (79 tests now,
+9 new: comprehension basic/filtered/ternary/map/multi-clause/scoping,
+destructuring let/swap/for-loop/wrong-count/wrong-type, and http_get/
+http_post/unreachable-host).
+
+Also two small new apps proving the existing feature set works for
+genuinely different use cases: apps/password_gen (random_int +
+sha256 "fingerprint" you can safely save to verify a password later
+without exposing it) and apps/guess_game (a persisted best-score file -
+a different file-I/O use case than the task managers). Building
+guess_game found and fixed a real bug: input() returns "" forever once
+stdin hits EOF rather than blocking or signaling "no more input", so a
+`while true` loop with no failure-count guard span into an infinite
+prompt loop the instant piped input ran dry - fixed at the game level
+with a bad-input-streak counter rather than changing input()'s
+long-standing EOF behavior, which several existing apps already depend
+on.
