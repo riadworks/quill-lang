@@ -76,7 +76,6 @@
       <h2>What's deliberately not here</h2>
       <table class="ref">
         <tr><th>Missing</th><th>What that means in practice</th></tr>
-        <tr><td>Multiple inheritance</td><td><code>class C(A, B):</code> isn't valid — one optional parent only.</td></tr>
         <tr><td>Reflected operators</td><td>No <code>__radd__</code>-style fallback — an overload only fires with the instance on the left (Lesson 9).</td></tr>
         <tr><td>A package manager</td><td>No third-party libraries to install — only what's in the standard library (Lesson 12) and your own <code>.ql</code> files (Lesson 11).</td></tr>
         <tr><td>Async/concurrency</td><td>Everything runs on one thread, top to bottom — <code>serve()</code> included.</td></tr>
@@ -85,7 +84,9 @@
       <p>
         None of this is accidental — it's the project keeping its surface area small enough
         to stay solid and well-tested, rather than spreading thin over more features. All
-        five are reasonable directions the language could grow in later.
+        four are reasonable directions the language could grow in later. (Multiple
+        inheritance used to be on this list — <code>class C(A, B):</code> works now, with a
+        Python-style MRO, as covered in <a href="08-classes-and-inheritance.html">Lesson 8</a>.)
       </p>
 
       <h2>There's no PyPI package yet</h2>
