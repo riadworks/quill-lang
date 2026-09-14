@@ -120,6 +120,12 @@ nums[0] = 99      <span class="cmt"># indexing assigns too</span></pre>
         <tr><td><code>.zip_with(other, fn)</code></td><td>Combines two lists position by position through <code>fn(a, b)</code>, instead of just pairing them like <code>zip()</code> does.</td></tr>
         <tr><td><code>.rotate(n)</code></td><td>Shifts elements around by <code>n</code> positions, wrapping at the ends.</td></tr>
         <tr><td><code>.shuffle()</code> / <code>.choice()</code></td><td>Method forms of the top-level <code>shuffle()</code>/<code>random_choice()</code> from Lesson 12.</td></tr>
+        <tr><td><code>.first()</code> / <code>.last()</code></td><td>The first/last element, with a clear error on an empty list rather than an index to get wrong.</td></tr>
+        <tr><td><code>.last_index_of(x)</code></td><td>Like <code>.index_of()</code>, searching from the end.</td></tr>
+        <tr><td><code>.repeat(n)</code></td><td>The whole list repeated <code>n</code> times — the list equivalent of the string method of the same name.</td></tr>
+        <tr><td><code>.flatten_deep()</code></td><td>Like <code>.flatten()</code>, but recursively — nested lists at any depth all come out flat.</td></tr>
+        <tr><td><code>.pairwise()</code></td><td>Every consecutive pair as <code>[a, b]</code> — <code>[1,2,3]</code> becomes <code>[[1,2],[2,3]]</code>.</td></tr>
+        <tr><td><code>.min([key_fn])</code> / <code>.max([key_fn])</code> / <code>.sum()</code></td><td>Method forms of the top-level <code>min()</code>/<code>max()</code>/<code>sum()</code>.</td></tr>
       </table>
       <pre class="code-block"><span class="fnname">print</span>([1, 2, 3, 4, 5].chunk(2))                          <span class="cmt"># [[1, 2], [3, 4], [5]]</span>
 <span class="fnname">print</span>([1, 2, 3, 4, 5, 6].group_by(<span class="kw">pull</span>(x): <span class="kw">return</span> x % 2))   <span class="cmt"># {1: [1, 3, 5], 0: [2, 4, 6]}</span></pre>

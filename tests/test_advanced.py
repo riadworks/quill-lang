@@ -1275,6 +1275,72 @@ def test_list_remove_and_map_pop_error_wording():
     assert msg == "key not found: 'z' (line 1)"
 
 
+def test_list_min_max_sum_methods():
+    out = run(
+        "print([3, 1, 2].min())\n"
+        "print([3, 1, 2].max())\n"
+        "print([1, 2, 3].sum())\n"
+        'print([{"age": 30}, {"age": 20}].min(pull(p): return p["age"])["age"])\n'
+    )
+    assert out.splitlines() == ["1", "3", "6", "20"]
+
+
+def test_list_first_and_last():
+    out = run("print([1, 2, 3].first())\nprint([1, 2, 3].last())\n")
+    assert out.splitlines() == ["1", "3"]
+    assert "empty" in run_expect_error("[].first()\n")
+    assert "empty" in run_expect_error("[].last()\n")
+
+
+def test_list_last_index_of_repeat_flatten_deep_pairwise():
+    out = run(
+        "print([1, 2, 3, 2, 1].last_index_of(2))\n"
+        "print([1, 2].repeat(3))\n"
+        "print([[1, [2, 3]], [4]].flatten_deep())\n"
+        "print([1, 2, 3, 4].pairwise())\n"
+    )
+    assert out.splitlines() == ["3", "[1, 2, 1, 2, 1, 2]", "[1, 2, 3, 4]", "[[1, 2], [2, 3], [3, 4]]"]
+
+
+def test_string_equals_ignore_case():
+    out = run('print("HELLO".equals_ignore_case("hello"))\nprint("HELLO".equals_ignore_case("world"))\n')
+    assert out.splitlines() == ["true", "false"]
+
+
+def test_filesystem_round_out(tmp_path):
+    a = str(tmp_path / "a.txt").replace("\\", "\\\\")
+    b = str(tmp_path / "b.txt").replace("\\", "\\\\")
+    c = str(tmp_path / "c.txt").replace("\\", "\\\\")
+    d = str(tmp_path / "sub").replace("\\", "\\\\")
+    out = run(
+        f'write_file("{a}", "hello")\n'
+        f'copy_file("{a}", "{b}")\n'
+        f'print(file_exists("{b}"))\n'
+        f'print(file_size("{a}"))\n'
+        f'move_file("{b}", "{c}")\n'
+        f'print(file_exists("{b}"))\n'
+        f'print(file_exists("{c}"))\n'
+        f'make_dir("{d}")\n'
+        f'delete_dir("{d}")\n'
+        f'print(file_exists("{d}"))\n'
+    )
+    assert out.splitlines() == ["true", "5", "false", "true", "false"]
+
+
+def test_env_all_returns_a_map():
+    out = run("print(type(env_all()))\n")
+    assert out.strip() == "map"
+
+
+def test_levenshtein():
+    out = run(
+        'print(levenshtein("kitten", "sitting"))\n'
+        'print(levenshtein("same", "same"))\n'
+        'print(levenshtein("", "abc"))\n'
+    )
+    assert out.splitlines() == ["3", "0", "3"]
+
+
 def test_random_int_stays_in_range():
     out = run(
         "let ok = true\n"

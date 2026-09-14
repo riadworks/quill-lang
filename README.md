@@ -204,7 +204,7 @@ Paths are resolved relative to the importing file.
   `.is_lower()` `.is_space()` `.is_ascii()` `.byte_length()`
   `.center(width, [ch])` `.zfill(width)` `.remove_prefix(s)`
   `.remove_suffix(s)` `.split_lines()` `.to_snake_case()`
-  `.to_camel_case()` `.to_kebab_case()`
+  `.to_camel_case()` `.to_kebab_case()` `.equals_ignore_case(other)`
 - `true` / `false` / `nil`
 - Lists: `[1, 2, 3]`, indexed with `xs[0]`/`xs[-1]`, with methods:
   `.push(x)` `.pop()`/`.pop(i)` `.insert(i, x)` `.remove(x)` `.clear()`
@@ -215,7 +215,9 @@ Paths are resolved relative to the importing file.
   `.difference(other)` `.take(n)` `.drop(n)` `.take_last(n)`
   `.drop_last(n)` `.take_while(f)` `.drop_while(f)` `.find(f)`
   `.find_index(f)` `.partition(f)` `.tally()` `.every(f)` `.some(f)`
-  `.zip_with(other, f)` `.rotate(n)` `.shuffle()` `.choice()`
+  `.zip_with(other, f)` `.rotate(n)` `.shuffle()` `.choice()` `.first()`
+  `.last()` `.last_index_of(x)` `.repeat(n)` `.flatten_deep()`
+  `.pairwise()` `.min([key_fn])` `.max([key_fn])` `.sum()`
   (`.sort()` and
   `.reverse()` return a new list rather than mutating, matching the
   standalone `sorted()`; `.sort()`'s extra argument can be a key function, a
@@ -255,8 +257,9 @@ Paths are resolved relative to the importing file.
 `is_class`, `mean`, `median`, `mode`, `variance`, `stdev`, `percentile`,
 `date_format`, `date_parse`, `clamp`, `lerp`, `sign`, `is_even`,
 `is_odd`, `hex_encode`, `hex_decode`, `md5`, `sha1`, `sha512`,
-`hmac_sha256`, `args`, `platform`, `text_wrap`, `sample`, plus the
-constants `PI`, `E`, `INF`, `NAN`, and `TAU`. (The older top-level
+`hmac_sha256`, `args`, `platform`, `text_wrap`, `sample`, `copy_file`,
+`move_file`, `file_size`, `delete_dir`, `env_all`, `levenshtein`, plus
+the constants `PI`, `E`, `INF`, `NAN`, and `TAU`. (The older top-level
 `push`/`pop`/`keys`/etc.
 and the newer `.push()`/`.pop()`/`.keys()` method forms both work and do the
 same thing — the methods are just nicer to chain.)
@@ -317,6 +320,14 @@ after the script name on the command line (`quill script.ql foo bar` ->
 own arguments before this. `platform()` returns `"Windows"`/`"Linux"`/
 `"Darwin"`. `text_wrap(s, width)` wraps text into a list of lines.
 `sample(list, n)` picks `n` elements at random without repeats.
+`copy_file`/`move_file` and `file_size(path)`/`delete_dir(path)` (the
+latter removes a directory and everything in it - same "trusts the
+script" model as `write_file` already overwriting a file) round out the
+filesystem story. `env_all()` returns every environment variable as a
+map, alongside the existing single-variable `env_get`. `levenshtein(a, b)`
+is the classic string edit-distance algorithm - how many single-character
+edits turn one string into the other, useful for fuzzy matching or a
+"did you mean...?" suggestion.
 
 `password_hash(password)` / `password_verify(password, hash)` are for real
 user passwords: salted PBKDF2-HMAC-SHA256 (260,000 iterations) with a

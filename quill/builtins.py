@@ -1141,6 +1141,89 @@ def build_globals(script_args=None) -> Environment:
             raise RuntimeErr(f"sample() size must be between 0 and {len(lst)}", line)
         return _random.sample(lst, n)
 
+    def b_copy_file(args, line):
+        import shutil
+
+        _arity("copy_file", args, line, 2)
+        src, dst = args
+        if not isinstance(src, str):
+            raise RuntimeErr(f"copy_file() expects a string source path, got {type_name(src)}", line)
+        if not isinstance(dst, str):
+            raise RuntimeErr(f"copy_file() expects a string destination path, got {type_name(dst)}", line)
+        try:
+            shutil.copy(src, dst)
+        except OSError as exc:
+            raise RuntimeErr(f"cannot copy '{src}' to '{dst}': {exc.strerror}", line)
+        return None
+
+    def b_move_file(args, line):
+        import shutil
+
+        _arity("move_file", args, line, 2)
+        src, dst = args
+        if not isinstance(src, str):
+            raise RuntimeErr(f"move_file() expects a string source path, got {type_name(src)}", line)
+        if not isinstance(dst, str):
+            raise RuntimeErr(f"move_file() expects a string destination path, got {type_name(dst)}", line)
+        try:
+            shutil.move(src, dst)
+        except OSError as exc:
+            raise RuntimeErr(f"cannot move '{src}' to '{dst}': {exc.strerror}", line)
+        return None
+
+    def b_file_size(args, line):
+        import os
+
+        _arity("file_size", args, line, 1)
+        path = args[0]
+        if not isinstance(path, str):
+            raise RuntimeErr(f"file_size() expects a string path, got {type_name(path)}", line)
+        try:
+            return os.path.getsize(path)
+        except OSError as exc:
+            raise RuntimeErr(f"cannot stat '{path}': {exc.strerror}", line)
+
+    def b_delete_dir(args, line):
+        import shutil
+
+        _arity("delete_dir", args, line, 1)
+        path = args[0]
+        if not isinstance(path, str):
+            raise RuntimeErr(f"delete_dir() expects a string path, got {type_name(path)}", line)
+        try:
+            shutil.rmtree(path)
+        except OSError as exc:
+            raise RuntimeErr(f"cannot delete '{path}': {exc.strerror}", line)
+        return None
+
+    def b_env_all(args, line):
+        import os
+
+        _arity("env_all", args, line, 0)
+        return dict(os.environ)
+
+    def b_levenshtein(args, line):
+        _arity("levenshtein", args, line, 2)
+        a, b = args
+        if not isinstance(a, str):
+            raise RuntimeErr(f"levenshtein() expects a string, got {type_name(a)}", line)
+        if not isinstance(b, str):
+            raise RuntimeErr(f"levenshtein() expects a string, got {type_name(b)}", line)
+        if len(a) < len(b):
+            a, b = b, a
+        if not b:
+            return len(a)
+        previous_row = list(range(len(b) + 1))
+        for i, ca in enumerate(a):
+            current_row = [i + 1]
+            for j, cb in enumerate(b):
+                insertions = previous_row[j + 1] + 1
+                deletions = current_row[j] + 1
+                substitutions = previous_row[j] + (ca != cb)
+                current_row.append(min(insertions, deletions, substitutions))
+            previous_row = current_row
+        return previous_row[-1]
+
     def b_env_get(args, line):
         import os
 
@@ -1282,6 +1365,12 @@ def build_globals(script_args=None) -> Environment:
     reg("platform", b_platform)
     reg("text_wrap", b_text_wrap)
     reg("sample", b_sample)
+    reg("copy_file", b_copy_file)
+    reg("move_file", b_move_file)
+    reg("file_size", b_file_size)
+    reg("delete_dir", b_delete_dir)
+    reg("env_all", b_env_all)
+    reg("levenshtein", b_levenshtein)
     env.declare("PI", 3.141592653589793)
     env.declare("E", 2.718281828459045)
     env.declare("INF", float("inf"))

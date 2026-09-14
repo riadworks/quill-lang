@@ -164,6 +164,9 @@
         <tr><td><code>list_dir(path)</code></td><td>Sorted list of names in a directory.</td></tr>
         <tr><td><code>make_dir(path)</code></td><td>Creates a directory, including any missing parent directories.</td></tr>
         <tr><td><code>delete_file(path)</code></td><td>Removes a file.</td></tr>
+        <tr><td><code>delete_dir(path)</code></td><td>Removes a directory and everything inside it.</td></tr>
+        <tr><td><code>copy_file(src, dst)</code> / <code>move_file(src, dst)</code></td><td>Copies or moves (renames) a file.</td></tr>
+        <tr><td><code>file_size(path)</code></td><td>Size in bytes.</td></tr>
         <tr><td><code>path_join(parts)</code></td><td>Joins a list of path segments with the right separator for the OS. A list, not variadic arguments, since Quill functions don't have those.</td></tr>
         <tr><td><code>cwd()</code></td><td>The current working directory.</td></tr>
       </table>
@@ -304,7 +307,15 @@
       <table class="ref">
         <tr><th>Function</th><th>Does</th></tr>
         <tr><td><code>env_get(name)</code> / <code>env_get(name, default)</code></td><td>Reads an environment variable, for config/secrets instead of hardcoding them.</td></tr>
+        <tr><td><code>env_all()</code></td><td>Every environment variable, as a map.</td></tr>
       </table>
+
+      <h2>Text similarity</h2>
+      <table class="ref">
+        <tr><th>Function</th><th>Does</th></tr>
+        <tr><td><code>levenshtein(a, b)</code></td><td>The number of single-character edits (insert, delete, substitute) needed to turn <code>a</code> into <code>b</code> — the classic edit-distance algorithm, useful for fuzzy matching or a "did you mean...?" suggestion.</td></tr>
+      </table>
+      <pre class="code-block"><span class="fnname">print</span>(levenshtein(<span class="str">"kitten"</span>, <span class="str">"sitting"</span>))   <span class="cmt"># 3</span></pre>
 
       <h2>Networking</h2>
       <p>

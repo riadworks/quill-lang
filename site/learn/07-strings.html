@@ -144,6 +144,7 @@
         <tr><td><code>.is_ascii()</code></td><td>Whether every character is plain ASCII.</td></tr>
         <tr><td><code>.byte_length()</code></td><td>Length in UTF-8 bytes, which can differ from <code>len()</code> (character count) once a string has any non-ASCII character.</td></tr>
         <tr><td><code>.to_snake_case()</code> / <code>.to_camel_case()</code> / <code>.to_kebab_case()</code></td><td>Converts between <code>snake_case</code>, <code>camelCase</code>, and <code>kebab-case</code>, from any of the three (or plain words).</td></tr>
+        <tr><td><code>.equals_ignore_case(other)</code></td><td>Case-insensitive comparison, shorter than <code>a.lower() == b.lower()</code>.</td></tr>
       </table>
       <pre class="code-block"><span class="fnname">print</span>(<span class="str">"XMLHttpRequest"</span>.to_snake_case())   <span class="cmt"># xml_http_request</span>
 <span class="fnname">print</span>(<span class="str">"user_id"</span>.to_camel_case())         <span class="cmt"># userId</span></pre>

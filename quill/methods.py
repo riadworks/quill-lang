@@ -256,6 +256,11 @@ def _s_split_lines(s, args, line):
     return s.splitlines()
 
 
+def _s_equals_ignore_case(s, args, line):
+    _arity("equals_ignore_case", args, line, 1)
+    return s.lower() == _require_str("equals_ignore_case", args[0], line).lower()
+
+
 STRING_METHODS = {
     "upper": _s_upper,
     "lower": _s_lower,
@@ -293,6 +298,7 @@ STRING_METHODS = {
     "to_snake_case": _s_to_snake_case,
     "to_kebab_case": _s_to_kebab_case,
     "to_camel_case": _s_to_camel_case,
+    "equals_ignore_case": _s_equals_ignore_case,
 }
 
 
@@ -715,6 +721,100 @@ def _l_choice(lst, args, line):
     return _random.choice(lst)
 
 
+def _l_first(lst, args, line):
+    _arity("first", args, line, 0)
+    if not lst:
+        raise RuntimeErr("first() on an empty list", line)
+    return lst[0]
+
+
+def _l_last(lst, args, line):
+    _arity("last", args, line, 0)
+    if not lst:
+        raise RuntimeErr("last() on an empty list", line)
+    return lst[-1]
+
+
+def _l_last_index_of(lst, args, line):
+    _arity("last_index_of", args, line, 1)
+    for i in range(len(lst) - 1, -1, -1):
+        if quill_equals(lst[i], args[0]):
+            return i
+    return -1
+
+
+def _l_repeat(lst, args, line):
+    _arity("repeat", args, line, 1)
+    n = _require_nonneg_int("repeat", args[0], line)
+    return lst * n
+
+
+def _l_flatten_deep(lst, args, line):
+    _arity("flatten_deep", args, line, 0)
+    result = []
+
+    def _go(items):
+        for x in items:
+            if isinstance(x, list):
+                _go(x)
+            else:
+                result.append(x)
+
+    _go(lst)
+    return result
+
+
+def _l_pairwise(lst, args, line):
+    _arity("pairwise", args, line, 0)
+    return [[lst[i], lst[i + 1]] for i in range(len(lst) - 1)]
+
+
+def _l_min(lst, args, line):
+    _arity("min", args, line, 0, 1)
+    if not lst:
+        raise RuntimeErr("min() on an empty list", line)
+    if args:
+        from quill.interpreter import CURRENT_INTERPRETER
+
+        interp = CURRENT_INTERPRETER[0]
+        key_fn = args[0]
+        try:
+            return min(lst, key=lambda x: interp.call(key_fn, [x], line))
+        except TypeError:
+            raise RuntimeErr("min() key function must return all-comparable values", line)
+    try:
+        return min(lst)
+    except TypeError:
+        raise RuntimeErr("min() needs a list of all-comparable items", line)
+
+
+def _l_max(lst, args, line):
+    _arity("max", args, line, 0, 1)
+    if not lst:
+        raise RuntimeErr("max() on an empty list", line)
+    if args:
+        from quill.interpreter import CURRENT_INTERPRETER
+
+        interp = CURRENT_INTERPRETER[0]
+        key_fn = args[0]
+        try:
+            return max(lst, key=lambda x: interp.call(key_fn, [x], line))
+        except TypeError:
+            raise RuntimeErr("max() key function must return all-comparable values", line)
+    try:
+        return max(lst)
+    except TypeError:
+        raise RuntimeErr("max() needs a list of all-comparable items", line)
+
+
+def _l_sum(lst, args, line):
+    _arity("sum", args, line, 0)
+    total = 0
+    for x in lst:
+        total += _require_number("sum", x, line)
+    return total
+
+
 LIST_METHODS = {
     "push": _l_push,
     "pop": _l_pop,
@@ -756,6 +856,15 @@ LIST_METHODS = {
     "rotate": _l_rotate,
     "shuffle": _l_shuffle,
     "choice": _l_choice,
+    "first": _l_first,
+    "last": _l_last,
+    "last_index_of": _l_last_index_of,
+    "repeat": _l_repeat,
+    "flatten_deep": _l_flatten_deep,
+    "pairwise": _l_pairwise,
+    "min": _l_min,
+    "max": _l_max,
+    "sum": _l_sum,
 }
 
 
