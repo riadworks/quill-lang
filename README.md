@@ -199,7 +199,8 @@ Paths are resolved relative to the importing file.
   `.copy()` `.extend(other)` `.count(x)` `.unique()` `.flatten()` `.sort()`
   `.sort(key_fn)` `.sort(reverse)` `.reverse()` `.contains(x)` `.index_of(x)`
   `.join(sep)` `.map(f)` `.filter(f)` `.reduce(f, init)` `.flat_map(f)`
-  `.chunk(n)` `.group_by(f)` (`.sort()` and
+  `.chunk(n)` `.group_by(f)` `.union(other)` `.intersect(other)`
+  `.difference(other)` (`.sort()` and
   `.reverse()` return a new list rather than mutating, matching the
   standalone `sorted()`; `.sort()`'s extra argument can be a key function, a
   `true`/`false` for reverse order, or both, in either order)
@@ -230,8 +231,12 @@ Paths are resolved relative to the importing file.
 `reduce`, `regex_match`, `regex_find`, `regex_find_all`, `regex_replace`,
 `regex_split`, `regex_groups`, `time`, `sleep`, `uuid`, `base64_encode`,
 `base64_decode`, `list_dir`, `make_dir`, `delete_file`, `path_join`,
-`cwd`, plus the constants `PI` and `E`. (The older top-level
-`push`/`pop`/`keys`/etc.
+`cwd`, `assert`, `exit`, `deep_copy`, `url_decode`, `html_escape`,
+`html_unescape`, `csv_parse`, `csv_stringify`, `bit_and`, `bit_or`,
+`bit_xor`, `bit_not`, `bit_shift_left`, `bit_shift_right`, `is_number`,
+`is_string`, `is_list`, `is_map`, `is_bool`, `is_nil`, `is_function`,
+`is_class`, plus the constants `PI`, `E`, `INF`, and `NAN`. (The older
+top-level `push`/`pop`/`keys`/etc.
 and the newer `.push()`/`.pop()`/`.keys()` method forms both work and do the
 same thing — the methods are just nicer to chain.)
 
@@ -257,6 +262,23 @@ program eventually needs. `base64_encode`/`base64_decode` round out
 (taking a list of segments, since there's no variadic arguments), and
 `cwd()` round out `read_file`/`write_file`/`file_exists` into full
 filesystem access.
+
+`assert(cond, [message])` raises a catchable error (default message
+"assertion failed") when `cond` is falsy - the same idea as Python's
+`assert`, just as a function rather than a statement, so it works
+everywhere an expression does. `exit([code])` ends the whole program
+immediately with the given exit code (0 if omitted) - it bypasses
+`try`/`except` entirely, the same way Python's `sys.exit()` isn't caught
+by an ordinary `except Exception`. `deep_copy(v)` recursively copies
+nested lists/maps (a plain `.copy()` is shallow); `url_decode(s)` is the
+inverse of `url_encode(s)`; `html_escape(s)`/`html_unescape(s)` guard
+against XSS when building HTML by hand in a `serve()` handler;
+`csv_parse(text)`/`csv_stringify(rows)` convert between CSV text and a
+list of row-lists; `bit_and`/`bit_or`/`bit_xor`/`bit_not`/
+`bit_shift_left`/`bit_shift_right` cover bitwise work with no dedicated
+operators for it; and `is_number`/`is_string`/`is_list`/`is_map`/
+`is_bool`/`is_nil`/`is_function`/`is_class` are readable shorthands for
+`type(v) == "..."`. `INF` and `NAN` round out `PI`/`E` as constants.
 
 `password_hash(password)` / `password_verify(password, hash)` are for real
 user passwords: salted PBKDF2-HMAC-SHA256 (260,000 iterations) with a

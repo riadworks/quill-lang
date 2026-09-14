@@ -454,6 +454,42 @@ def _l_flat_map(lst, args, line):
     return result
 
 
+def _l_union(lst, args, line):
+    _arity("union", args, line, 1)
+    other = args[0]
+    if not isinstance(other, list):
+        raise RuntimeErr(f"union() expects a list, got {type_name(other)}", line)
+    result = []
+    for x in list(lst) + list(other):
+        if not any(quill_equals(x, y) for y in result):
+            result.append(x)
+    return result
+
+
+def _l_intersect(lst, args, line):
+    _arity("intersect", args, line, 1)
+    other = args[0]
+    if not isinstance(other, list):
+        raise RuntimeErr(f"intersect() expects a list, got {type_name(other)}", line)
+    result = []
+    for x in lst:
+        if any(quill_equals(x, y) for y in other) and not any(quill_equals(x, y) for y in result):
+            result.append(x)
+    return result
+
+
+def _l_difference(lst, args, line):
+    _arity("difference", args, line, 1)
+    other = args[0]
+    if not isinstance(other, list):
+        raise RuntimeErr(f"difference() expects a list, got {type_name(other)}", line)
+    result = []
+    for x in lst:
+        if not any(quill_equals(x, y) for y in other) and not any(quill_equals(x, y) for y in result):
+            result.append(x)
+    return result
+
+
 LIST_METHODS = {
     "push": _l_push,
     "pop": _l_pop,
@@ -476,6 +512,9 @@ LIST_METHODS = {
     "chunk": _l_chunk,
     "group_by": _l_group_by,
     "flat_map": _l_flat_map,
+    "union": _l_union,
+    "intersect": _l_intersect,
+    "difference": _l_difference,
 }
 
 

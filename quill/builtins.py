@@ -768,6 +768,160 @@ def build_globals() -> Environment:
             raise RuntimeErr("factorial() expects a non-negative whole number", line)
         return math.factorial(int(n))
 
+    def b_assert(args, line):
+        from quill.values import is_truthy
+
+        _arity("assert", args, line, 1, 2)
+        if not is_truthy(args[0]):
+            message = quill_str(args[1]) if len(args) == 2 else "assertion failed"
+            raise RuntimeErr(message, line)
+        return None
+
+    def b_exit(args, line):
+        import sys
+
+        _arity("exit", args, line, 0, 1)
+        code = int(_require_number("exit", args[0], line)) if args else 0
+        sys.exit(code)
+
+    def b_deep_copy(args, line):
+        _arity("deep_copy", args, line, 1)
+
+        def _copy(v):
+            if isinstance(v, list):
+                return [_copy(x) for x in v]
+            if isinstance(v, dict):
+                return {k: _copy(x) for k, x in v.items()}
+            return v  # numbers/strings/bools/nil are immutable; instances are shared, not cloned
+
+        return _copy(args[0])
+
+    def b_url_decode(args, line):
+        import urllib.parse
+
+        _arity("url_decode", args, line, 1)
+        text = args[0]
+        if not isinstance(text, str):
+            raise RuntimeErr(f"url_decode() expects a string, got {type_name(text)}", line)
+        return urllib.parse.unquote(text)
+
+    def b_html_escape(args, line):
+        import html
+
+        _arity("html_escape", args, line, 1)
+        text = args[0]
+        if not isinstance(text, str):
+            raise RuntimeErr(f"html_escape() expects a string, got {type_name(text)}", line)
+        return html.escape(text)
+
+    def b_html_unescape(args, line):
+        import html
+
+        _arity("html_unescape", args, line, 1)
+        text = args[0]
+        if not isinstance(text, str):
+            raise RuntimeErr(f"html_unescape() expects a string, got {type_name(text)}", line)
+        return html.unescape(text)
+
+    def b_csv_parse(args, line):
+        import csv
+        import io
+
+        _arity("csv_parse", args, line, 1)
+        text = args[0]
+        if not isinstance(text, str):
+            raise RuntimeErr(f"csv_parse() expects a string, got {type_name(text)}", line)
+        try:
+            return [list(row) for row in csv.reader(io.StringIO(text))]
+        except csv.Error as exc:
+            raise RuntimeErr(f"invalid CSV: {exc}", line)
+
+    def b_csv_stringify(args, line):
+        import csv
+        import io
+
+        _arity("csv_stringify", args, line, 1)
+        rows = args[0]
+        if not isinstance(rows, list) or not all(isinstance(r, list) for r in rows):
+            raise RuntimeErr("csv_stringify() expects a list of lists", line)
+        buf = io.StringIO()
+        writer = csv.writer(buf, lineterminator="\n")
+        for row in rows:
+            writer.writerow([quill_str(v) for v in row])
+        return buf.getvalue()
+
+    def b_bit_and(args, line):
+        _arity("bit_and", args, line, 2)
+        a = int(_require_number("bit_and", args[0], line))
+        b = int(_require_number("bit_and", args[1], line))
+        return a & b
+
+    def b_bit_or(args, line):
+        _arity("bit_or", args, line, 2)
+        a = int(_require_number("bit_or", args[0], line))
+        b = int(_require_number("bit_or", args[1], line))
+        return a | b
+
+    def b_bit_xor(args, line):
+        _arity("bit_xor", args, line, 2)
+        a = int(_require_number("bit_xor", args[0], line))
+        b = int(_require_number("bit_xor", args[1], line))
+        return a ^ b
+
+    def b_bit_not(args, line):
+        _arity("bit_not", args, line, 1)
+        return ~int(_require_number("bit_not", args[0], line))
+
+    def b_bit_shift_left(args, line):
+        _arity("bit_shift_left", args, line, 2)
+        a = int(_require_number("bit_shift_left", args[0], line))
+        n = int(_require_number("bit_shift_left", args[1], line))
+        if n < 0:
+            raise RuntimeErr("bit_shift_left() shift amount must not be negative", line)
+        return a << n
+
+    def b_bit_shift_right(args, line):
+        _arity("bit_shift_right", args, line, 2)
+        a = int(_require_number("bit_shift_right", args[0], line))
+        n = int(_require_number("bit_shift_right", args[1], line))
+        if n < 0:
+            raise RuntimeErr("bit_shift_right() shift amount must not be negative", line)
+        return a >> n
+
+    def b_is_number(args, line):
+        _arity("is_number", args, line, 1)
+        return type_name(args[0]) == "number"
+
+    def b_is_string(args, line):
+        _arity("is_string", args, line, 1)
+        return type_name(args[0]) == "string"
+
+    def b_is_list(args, line):
+        _arity("is_list", args, line, 1)
+        return type_name(args[0]) == "list"
+
+    def b_is_map(args, line):
+        _arity("is_map", args, line, 1)
+        return type_name(args[0]) == "map"
+
+    def b_is_bool(args, line):
+        _arity("is_bool", args, line, 1)
+        return type_name(args[0]) == "bool"
+
+    def b_is_nil(args, line):
+        _arity("is_nil", args, line, 1)
+        return args[0] is None
+
+    def b_is_function(args, line):
+        _arity("is_function", args, line, 1)
+        return type_name(args[0]) == "function"
+
+    def b_is_class(args, line):
+        from quill.values import QuillClass
+
+        _arity("is_class", args, line, 1)
+        return isinstance(args[0], QuillClass)
+
     def b_env_get(args, line):
         import os
 
@@ -864,7 +1018,31 @@ def build_globals() -> Environment:
     reg("radians", b_radians)
     reg("hypot", b_hypot)
     reg("factorial", b_factorial)
+    reg("assert", b_assert)
+    reg("exit", b_exit)
+    reg("deep_copy", b_deep_copy)
+    reg("url_decode", b_url_decode)
+    reg("html_escape", b_html_escape)
+    reg("html_unescape", b_html_unescape)
+    reg("csv_parse", b_csv_parse)
+    reg("csv_stringify", b_csv_stringify)
+    reg("bit_and", b_bit_and)
+    reg("bit_or", b_bit_or)
+    reg("bit_xor", b_bit_xor)
+    reg("bit_not", b_bit_not)
+    reg("bit_shift_left", b_bit_shift_left)
+    reg("bit_shift_right", b_bit_shift_right)
+    reg("is_number", b_is_number)
+    reg("is_string", b_is_string)
+    reg("is_list", b_is_list)
+    reg("is_map", b_is_map)
+    reg("is_bool", b_is_bool)
+    reg("is_nil", b_is_nil)
+    reg("is_function", b_is_function)
+    reg("is_class", b_is_class)
     env.declare("PI", 3.141592653589793)
     env.declare("E", 2.718281828459045)
+    env.declare("INF", float("inf"))
+    env.declare("NAN", float("nan"))
 
     return env

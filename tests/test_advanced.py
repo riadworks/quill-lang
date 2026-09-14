@@ -837,6 +837,122 @@ def test_more_list_methods():
     ]
 
 
+def test_assert_passes_silently_and_fails_with_message():
+    out = run("assert(1 == 1)\nprint(\"ok\")\n")
+    assert out.strip() == "ok"
+    msg = run_expect_error('assert(1 == 2, "custom failure message")\n')
+    assert msg == "custom failure message (line 1)"
+
+
+def test_assert_default_message():
+    msg = run_expect_error("assert(false)\n")
+    assert "assertion failed" in msg
+
+
+def test_exit_stops_execution_with_the_given_code():
+    import contextlib
+    import io
+
+    from quill.builtins import build_globals
+    from quill.interpreter import Interpreter
+    from quill.lexer import tokenize
+    from quill.parser import parse
+
+    env = build_globals()
+    interp = Interpreter(env)
+    program = parse(tokenize('print("before")\nexit(7)\nprint("after")\n'))
+    buf = io.StringIO()
+    with pytest.raises(SystemExit) as exc_info:
+        with contextlib.redirect_stdout(buf):
+            interp.run(program)
+    assert exc_info.value.code == 7
+    assert buf.getvalue() == "before\n"
+
+
+def test_deep_copy_is_independent_of_the_original():
+    out = run(
+        'let original = {"a": [1, 2, 3]}\n'
+        "let copy = deep_copy(original)\n"
+        'copy["a"].push(4)\n'
+        'print(original["a"])\n'
+        'print(copy["a"])\n'
+    )
+    assert out.splitlines() == ["[1, 2, 3]", "[1, 2, 3, 4]"]
+
+
+def test_url_decode():
+    out = run('print(url_decode("a%20b%2Bc"))\n')
+    assert out.strip() == "a b+c"
+
+
+def test_html_escape_and_unescape_round_trip():
+    out = run(
+        'print(html_escape("<b>1 & 2</b>"))\n'
+        'print(html_unescape(html_escape("<b>1 & 2</b>")))\n'
+    )
+    assert out.splitlines() == ["&lt;b&gt;1 &amp; 2&lt;/b&gt;", "<b>1 & 2</b>"]
+
+
+def test_csv_parse_and_stringify():
+    out = run(
+        'print(csv_parse("name,age\\nAda,36"))\n'
+        'print(csv_stringify([["a", "b"], ["1", "2"]]))\n'
+    )
+    lines = out.splitlines()
+    assert lines[0] == '[["name", "age"], ["Ada", "36"]]'
+    assert lines[1] == "a,b"
+    assert lines[2] == "1,2"
+
+
+def test_bitwise_functions():
+    out = run(
+        "print(bit_and(12, 10))\n"
+        "print(bit_or(12, 10))\n"
+        "print(bit_xor(12, 10))\n"
+        "print(bit_not(0))\n"
+        "print(bit_shift_left(1, 4))\n"
+        "print(bit_shift_right(16, 4))\n"
+    )
+    assert out.splitlines() == ["8", "14", "6", "-1", "16", "1"]
+
+
+def test_bit_shift_rejects_negative_amount():
+    assert "negative" in run_expect_error("bit_shift_left(1, -1)\n")
+
+
+def test_type_predicates():
+    out = run(
+        "print(is_number(5))\n"
+        'print(is_string("hi"))\n'
+        "print(is_list([1]))\n"
+        "print(is_map({}))\n"
+        "print(is_bool(true))\n"
+        "print(is_nil(nil))\n"
+        "print(is_function(print))\n"
+        "print(is_number(true))\n"
+    )
+    assert out.splitlines() == ["true"] * 7 + ["false"]
+
+
+def test_is_class_distinguishes_class_from_instance():
+    out = run("class Foo:\n    pull init(): self.x = 1\nprint(is_class(Foo))\nprint(is_class(Foo()))\n")
+    assert out.splitlines() == ["true", "false"]
+
+
+def test_inf_and_nan_constants():
+    out = run("print(INF > 1000000)\nprint(NAN == NAN)\n")
+    assert out.splitlines() == ["true", "false"]
+
+
+def test_list_set_operations():
+    out = run(
+        "print([1, 2, 3].union([2, 3, 4]))\n"
+        "print([1, 2, 3].intersect([2, 3, 4]))\n"
+        "print([1, 2, 3].difference([2, 3, 4]))\n"
+    )
+    assert out.splitlines() == ["[1, 2, 3, 4]", "[2, 3]", "[1]"]
+
+
 def test_random_int_stays_in_range():
     out = run(
         "let ok = true\n"

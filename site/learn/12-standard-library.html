@@ -95,6 +95,7 @@
         <tr><td><code>factorial(n)</code></td><td><code>n!</code>, for a non-negative whole number.</td></tr>
         <tr><td><code>gcd(a, b)</code></td><td>Greatest common divisor.</td></tr>
         <tr><td><code>PI</code> / <code>E</code></td><td>The constants <code>3.141592653589793</code> and <code>2.718281828459045</code> (not functions — no parentheses).</td></tr>
+        <tr><td><code>INF</code> / <code>NAN</code></td><td>Infinity and not-a-number. <code>NAN == NAN</code> is <code>false</code>, same as everywhere else NaN shows up.</td></tr>
       </table>
       <div class="callout">
         <span class="callout-label">Gotcha</span>
@@ -230,6 +231,46 @@
         <tr><td><code>time()</code></td><td>The current Unix timestamp.</td></tr>
         <tr><td><code>sleep(seconds)</code></td><td>Pauses execution.</td></tr>
         <tr><td><code>base64_encode(s)</code> / <code>base64_decode(s)</code></td><td>Text-safe encoding, round-trippable.</td></tr>
+      </table>
+
+      <h2>Program control &amp; safety</h2>
+      <table class="ref">
+        <tr><th>Function</th><th>Does</th></tr>
+        <tr><td><code>assert(cond, [message])</code></td><td>Raises a catchable error if <code>cond</code> is falsy — the function form of Python's <code>assert</code> statement, so it works as an expression too.</td></tr>
+        <tr><td><code>exit([code])</code></td><td>Ends the whole program immediately with the given exit code (0 if omitted) — bypasses every <code>try</code>/<code>except</code> on the way out, the same way Python's <code>sys.exit()</code> isn't caught by an ordinary <code>except Exception</code>.</td></tr>
+        <tr><td><code>deep_copy(v)</code></td><td>Recursively copies nested lists/maps — a plain <code>.copy()</code> only copies one level deep.</td></tr>
+      </table>
+
+      <h2>Type predicates</h2>
+      <p>Readable shorthands for <code>type(v) == "..."</code>:</p>
+      <table class="ref">
+        <tr><th>Function</th><th>True when <code>v</code> is a...</th></tr>
+        <tr><td><code>is_number(v)</code></td><td>number</td></tr>
+        <tr><td><code>is_string(v)</code></td><td>string</td></tr>
+        <tr><td><code>is_list(v)</code></td><td>list</td></tr>
+        <tr><td><code>is_map(v)</code></td><td>map</td></tr>
+        <tr><td><code>is_bool(v)</code></td><td>bool</td></tr>
+        <tr><td><code>is_nil(v)</code></td><td>nil</td></tr>
+        <tr><td><code>is_function(v)</code></td><td>function (built-in or user-defined)</td></tr>
+        <tr><td><code>is_class(v)</code></td><td>class itself (not an instance of one)</td></tr>
+      </table>
+
+      <h2>Web &amp; data formats</h2>
+      <table class="ref">
+        <tr><th>Function</th><th>Does</th></tr>
+        <tr><td><code>url_decode(s)</code></td><td>The inverse of <code>url_encode(s)</code>.</td></tr>
+        <tr><td><code>html_escape(s)</code> / <code>html_unescape(s)</code></td><td>Escapes <code>&lt;</code>/<code>&gt;</code>/<code>&amp;</code>/quotes for safe HTML output, and back. Use this on anything user-supplied before putting it in a <code>serve()</code> response — see <a href="13-networking.html">Lesson 13</a>.</td></tr>
+        <tr><td><code>csv_parse(text)</code></td><td>CSV text to a list of rows (each a list of strings).</td></tr>
+        <tr><td><code>csv_stringify(rows)</code></td><td>A list of rows back to CSV text.</td></tr>
+      </table>
+
+      <h2>Bitwise operations</h2>
+      <p>Quill has no <code>&amp;</code>/<code>|</code>/<code>^</code>/<code>~</code>/<code>&lt;&lt;</code>/<code>&gt;&gt;</code> operators — these functions cover the same ground:</p>
+      <table class="ref">
+        <tr><th>Function</th><th>Does</th></tr>
+        <tr><td><code>bit_and(a, b)</code> / <code>bit_or(a, b)</code> / <code>bit_xor(a, b)</code></td><td>Bitwise AND / OR / XOR.</td></tr>
+        <tr><td><code>bit_not(a)</code></td><td>Bitwise NOT.</td></tr>
+        <tr><td><code>bit_shift_left(a, n)</code> / <code>bit_shift_right(a, n)</code></td><td>Shifts <code>a</code> by <code>n</code> bits.</td></tr>
       </table>
 
       <h2>Environment</h2>

@@ -103,6 +103,11 @@ serve(8080, handler)</pre>
         <tr><td>A map</td><td><code>status</code> (default 200, or 302 if <code>redirect</code> is set), <code>body</code> (default <code>""</code>), <code>content_type</code> (default <code>text/html</code>), <code>redirect</code> (sets the <code>Location</code> header), and <code>set_cookie</code> (a map of cookie name to value).</td></tr>
       </table>
       <p>
+        Building HTML by hand this way has no automatic escaping — run any
+        user-supplied text through <code>html_escape()</code> (<a href="12-standard-library.html">Lesson 12</a>)
+        before putting it in the response, or it's an XSS bug waiting to happen.
+      </p>
+      <p>
         If a handler itself raises an error, the server doesn't crash and the visitor
         doesn't see the raw exception either — that request gets a plain "Internal Server
         Error" response, the real error is printed to the server's own stderr for you to
