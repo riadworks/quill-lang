@@ -120,13 +120,23 @@
         <tr><th>Method</th><th>Does</th></tr>
         <tr><td><code>.upper()</code> / <code>.lower()</code></td><td>Case conversion.</td></tr>
         <tr><td><code>.trim()</code></td><td>Strips leading/trailing whitespace.</td></tr>
+        <tr><td><code>.trim_start()</code> / <code>.trim_end()</code></td><td>Strips whitespace from just one side.</td></tr>
         <tr><td><code>.split(sep)</code></td><td>Splits into a list. With no argument, splits on any whitespace.</td></tr>
         <tr><td><code>.replace(a, b)</code></td><td>Replaces every occurrence of <code>a</code> with <code>b</code>.</td></tr>
         <tr><td><code>.contains(s)</code></td><td>Whether <code>s</code> is a substring.</td></tr>
         <tr><td><code>.starts_with(s)</code> / <code>.ends_with(s)</code></td><td>Prefix/suffix check.</td></tr>
         <tr><td><code>.find(s)</code></td><td>Index of the first occurrence of <code>s</code>, or <code>-1</code>.</td></tr>
+        <tr><td><code>.index(s)</code></td><td>Like <code>.find()</code>, but raises an error instead of returning <code>-1</code>.</td></tr>
+        <tr><td><code>.count(s)</code></td><td>How many times <code>s</code> occurs.</td></tr>
         <tr><td><code>.repeat(n)</code></td><td>The string repeated <code>n</code> times.</td></tr>
+        <tr><td><code>.pad_start(width, [ch])</code> / <code>.pad_end(width, [ch])</code></td><td>Pads with <code>ch</code> (default a space) to reach <code>width</code>, on the left or right.</td></tr>
         <tr><td><code>.title()</code></td><td>Title Cases Every Word.</td></tr>
+        <tr><td><code>.capitalize()</code></td><td>Uppercases just the first letter, lowercases the rest.</td></tr>
+        <tr><td><code>.swap_case()</code></td><td>Flips upper to lower and lower to upper.</td></tr>
+        <tr><td><code>.reverse()</code></td><td>The string, back to front.</td></tr>
+        <tr><td><code>.is_digit()</code> / <code>.is_alpha()</code> / <code>.is_alnum()</code></td><td>Whether every character is a digit / letter / letter-or-digit.</td></tr>
+        <tr><td><code>.is_upper()</code> / <code>.is_lower()</code></td><td>Whether the string is entirely upper/lower case.</td></tr>
+        <tr><td><code>.is_space()</code></td><td>Whether every character is whitespace.</td></tr>
       </table>
       <pre class="code-block"><span class="kw">let</span> s = <span class="str">"  Hello World  "</span>
 <span class="fnname">print</span>(s.trim().upper())        <span class="cmt"># "HELLO WORLD"</span>

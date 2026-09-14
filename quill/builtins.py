@@ -131,12 +131,11 @@ def build_globals() -> Environment:
         raise RuntimeErr(f"has() doesn't work on {type_name(container)}", line)
 
     def b_sorted(args, line):
-        _arity("sorted", args, line, 1)
+        from quill.methods import sort_with_options
+
+        _arity("sorted", args, line, 1, 3)
         lst = _require_list("sorted", args[0], line)
-        try:
-            return sorted(lst)
-        except TypeError:
-            raise RuntimeErr("sorted() needs a list of all-comparable items (e.g. all numbers or all strings)", line)
+        return sort_with_options(lst, args[1:], line, label="sorted")
 
     def b_sum(args, line):
         _arity("sum", args, line, 1)
@@ -146,19 +145,26 @@ def build_globals() -> Environment:
             total += _require_number("sum", v, line)
         return total
 
-    def b_min(args, line):
-        _arity("min", args, line, 1)
-        lst = _require_list("min", args[0], line)
+    def _min_max(name, py_fn, args, line):
+        _arity(name, args, line, 1, 2)
+        lst = _require_list(name, args[0], line)
         if not lst:
-            raise RuntimeErr("min() on an empty list", line)
-        return min(lst)
+            raise RuntimeErr(f"{name}() on an empty list", line)
+        if len(args) == 2:
+            from quill.interpreter import CURRENT_INTERPRETER
+
+            key_fn = args[1]
+            return py_fn(lst, key=lambda x: CURRENT_INTERPRETER[0].call(key_fn, [x], line))
+        try:
+            return py_fn(lst)
+        except TypeError:
+            raise RuntimeErr(f"{name}() needs a list of all-comparable items", line)
+
+    def b_min(args, line):
+        return _min_max("min", min, args, line)
 
     def b_max(args, line):
-        _arity("max", args, line, 1)
-        lst = _require_list("max", args[0], line)
-        if not lst:
-            raise RuntimeErr("max() on an empty list", line)
-        return max(lst)
+        return _min_max("max", max, args, line)
 
     def b_abs(args, line):
         _arity("abs", args, line, 1)
@@ -414,6 +420,145 @@ def build_globals() -> Environment:
         _random.shuffle(lst)
         return lst
 
+    def b_all(args, line):
+        from quill.values import is_truthy
+
+        _arity("all", args, line, 1)
+        lst = _require_list("all", args[0], line)
+        return all(is_truthy(x) for x in lst)
+
+    def b_any(args, line):
+        from quill.values import is_truthy
+
+        _arity("any", args, line, 1)
+        lst = _require_list("any", args[0], line)
+        return any(is_truthy(x) for x in lst)
+
+    def b_chr(args, line):
+        _arity("chr", args, line, 1)
+        n = int(_require_number("chr", args[0], line))
+        try:
+            return chr(n)
+        except (ValueError, OverflowError):
+            raise RuntimeErr(f"chr() arg {n} is not a valid character code", line)
+
+    def b_ord(args, line):
+        _arity("ord", args, line, 1)
+        s = args[0]
+        if not isinstance(s, str) or len(s) != 1:
+            raise RuntimeErr("ord() expects a single-character string", line)
+        return ord(s)
+
+    def b_hex(args, line):
+        _arity("hex", args, line, 1)
+        return hex(int(_require_number("hex", args[0], line)))
+
+    def b_oct(args, line):
+        _arity("oct", args, line, 1)
+        return oct(int(_require_number("oct", args[0], line)))
+
+    def b_bin(args, line):
+        _arity("bin", args, line, 1)
+        return bin(int(_require_number("bin", args[0], line)))
+
+    def b_pow(args, line):
+        _arity("pow", args, line, 2, 3)
+        base = _require_number("pow", args[0], line)
+        exponent = _require_number("pow", args[1], line)
+        if len(args) == 3:
+            modulus = _require_number("pow", args[2], line)
+            if modulus == 0:
+                raise RuntimeErr("pow() with modulus 0", line)
+            return pow(int(base), int(exponent), int(modulus))
+        return base**exponent
+
+    def b_divmod(args, line):
+        _arity("divmod", args, line, 2)
+        a = _require_number("divmod", args[0], line)
+        b = _require_number("divmod", args[1], line)
+        if b == 0:
+            raise RuntimeErr("divmod() by zero", line)
+        quotient, remainder = divmod(a, b)
+        return [quotient, remainder]
+
+    def b_repr(args, line):
+        from quill.values import quill_repr
+
+        _arity("repr", args, line, 1)
+        return quill_repr(args[0])
+
+    def b_log(args, line):
+        import math
+
+        _arity("log", args, line, 1, 2)
+        n = _require_number("log", args[0], line)
+        if n <= 0:
+            raise RuntimeErr("log() of a non-positive number", line)
+        if len(args) == 2:
+            base = _require_number("log", args[1], line)
+            return math.log(n, base)
+        return math.log(n)
+
+    def b_exp(args, line):
+        import math
+
+        _arity("exp", args, line, 1)
+        return math.exp(_require_number("exp", args[0], line))
+
+    def b_sin(args, line):
+        import math
+
+        _arity("sin", args, line, 1)
+        return math.sin(_require_number("sin", args[0], line))
+
+    def b_cos(args, line):
+        import math
+
+        _arity("cos", args, line, 1)
+        return math.cos(_require_number("cos", args[0], line))
+
+    def b_tan(args, line):
+        import math
+
+        _arity("tan", args, line, 1)
+        return math.tan(_require_number("tan", args[0], line))
+
+    def b_gcd(args, line):
+        import math
+
+        _arity("gcd", args, line, 2)
+        a = int(_require_number("gcd", args[0], line))
+        b = int(_require_number("gcd", args[1], line))
+        return math.gcd(a, b)
+
+    def b_map(args, line):
+        from quill.interpreter import CURRENT_INTERPRETER
+
+        _arity("map", args, line, 2)
+        fn, lst = args
+        lst = _require_list("map", lst, line)
+        return [CURRENT_INTERPRETER[0].call(fn, [x], line) for x in lst]
+
+    def b_filter(args, line):
+        from quill.interpreter import CURRENT_INTERPRETER
+        from quill.values import is_truthy
+
+        _arity("filter", args, line, 2)
+        fn, lst = args
+        lst = _require_list("filter", lst, line)
+        return [x for x in lst if is_truthy(CURRENT_INTERPRETER[0].call(fn, [x], line))]
+
+    def b_reduce(args, line):
+        from quill.interpreter import CURRENT_INTERPRETER
+
+        _arity("reduce", args, line, 3)
+        fn, lst, init = args
+        lst = _require_list("reduce", lst, line)
+        acc = init
+        for x in lst:
+            acc = CURRENT_INTERPRETER[0].call(fn, [acc, x], line)
+        return acc
+
     def b_env_get(args, line):
         import os
 
@@ -467,6 +612,26 @@ def build_globals() -> Environment:
     reg("env_get", b_env_get)
     reg("http_get", b_http_get)
     reg("http_post", b_http_post)
+    reg("all", b_all)
+    reg("any", b_any)
+    reg("chr", b_chr)
+    reg("ord", b_ord)
+    reg("hex", b_hex)
+    reg("oct", b_oct)
+    reg("bin", b_bin)
+    reg("pow", b_pow)
+    reg("divmod", b_divmod)
+    reg("repr", b_repr)
+    reg("log", b_log)
+    reg("exp", b_exp)
+    reg("sin", b_sin)
+    reg("cos", b_cos)
+    reg("tan", b_tan)
+    reg("gcd", b_gcd)
+    reg("map", b_map)
+    reg("filter", b_filter)
+    reg("reduce", b_reduce)
     env.declare("PI", 3.141592653589793)
+    env.declare("E", 2.718281828459045)
 
     return env

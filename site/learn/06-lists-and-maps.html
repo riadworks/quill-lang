@@ -89,8 +89,16 @@ nums[0] = 99      <span class="cmt"># indexing assigns too</span></pre>
         <tr><th>Method</th><th>Does</th></tr>
         <tr><td><code>.push(x)</code></td><td>Appends <code>x</code> in place.</td></tr>
         <tr><td><code>.pop()</code> / <code>.pop(i)</code></td><td>Removes and returns the last item, or the item at index <code>i</code>.</td></tr>
+        <tr><td><code>.insert(i, x)</code></td><td>Inserts <code>x</code> at index <code>i</code> in place.</td></tr>
+        <tr><td><code>.remove(x)</code></td><td>Removes the first occurrence of <code>x</code> in place; errors if it's not found.</td></tr>
+        <tr><td><code>.clear()</code></td><td>Empties the list in place.</td></tr>
+        <tr><td><code>.copy()</code></td><td>A shallow copy, as a new list.</td></tr>
+        <tr><td><code>.extend(other)</code></td><td>Appends every element of <code>other</code> in place.</td></tr>
+        <tr><td><code>.count(x)</code></td><td>How many elements equal <code>x</code>.</td></tr>
+        <tr><td><code>.unique()</code></td><td>New list with duplicates removed, order preserved.</td></tr>
+        <tr><td><code>.flatten()</code></td><td>New list with one level of nested lists flattened out.</td></tr>
         <tr><td><code>.reverse()</code></td><td>Returns a <strong>new</strong> reversed list (doesn't mutate).</td></tr>
-        <tr><td><code>.sort()</code></td><td>Returns a <strong>new</strong> sorted list (doesn't mutate); needs all-comparable elements.</td></tr>
+        <tr><td><code>.sort()</code> / <code>.sort(key_fn)</code> / <code>.sort(reverse)</code></td><td>Returns a <strong>new</strong> sorted list (doesn't mutate). The extra argument can be a one-argument key function, a <code>true</code>/<code>false</code> for reverse order, or both (order doesn't matter — one's a function, one's a bool).</td></tr>
         <tr><td><code>.contains(x)</code></td><td>Whether <code>x</code> is in the list (deep equality).</td></tr>
         <tr><td><code>.index_of(x)</code></td><td>First index of <code>x</code>, or <code>-1</code>.</td></tr>
         <tr><td><code>.join(sep)</code></td><td>Joins elements into a string, converting each with <code>str()</code> first.</td></tr>
@@ -98,6 +106,10 @@ nums[0] = 99      <span class="cmt"># indexing assigns too</span></pre>
         <tr><td><code>.filter(fn)</code></td><td>New list of items where <code>fn(item)</code> is truthy.</td></tr>
         <tr><td><code>.reduce(fn, init)</code></td><td>Folds the list into one value: <code>acc = fn(acc, item)</code> for each item, starting from <code>init</code>.</td></tr>
       </table>
+      <pre class="code-block"><span class="kw">let</span> people = [{<span class="str">"name"</span>: <span class="str">"Bo"</span>, <span class="str">"age"</span>: 30}, {<span class="str">"name"</span>: <span class="str">"Al"</span>, <span class="str">"age"</span>: 20}]
+<span class="fnname">print</span>(people.sort(<span class="kw">pull</span>(p): <span class="kw">return</span> p[<span class="str">"age"</span>]))         <span class="cmt"># Al (20) before Bo (30)</span>
+<span class="fnname">print</span>([3, 1, 2].sort(<span class="kw">true</span>))                            <span class="cmt"># [3, 2, 1] - reverse, no key needed</span>
+<span class="fnname">print</span>([1, 2, 2, 3, 1].unique())                       <span class="cmt"># [1, 2, 3]</span></pre>
       <pre class="code-block">nums.push(9)
 <span class="fnname">print</span>(nums.sort())                                   <span class="cmt"># [1, 3, 5, 8, 9, 99]</span>
 <span class="fnname">print</span>(nums.filter(<span class="kw">pull</span>(x): <span class="kw">return</span> x > 4))       <span class="cmt"># [5, 8, 9, 99]</span>
@@ -136,6 +148,11 @@ person[<span class="str">"age"</span>] = 37     <span class="cmt"># assignment t
         <tr><td><code>.items()</code></td><td>List of <code>[key, value]</code> pairs.</td></tr>
         <tr><td><code>.has(k)</code></td><td>Whether <code>k</code> is a key in the map.</td></tr>
         <tr><td><code>.get(k, default)</code></td><td>The value at <code>k</code>, or <code>default</code> (or <code>nil</code>) if it's missing.</td></tr>
+        <tr><td><code>.pop(k, [default])</code></td><td>Removes and returns the value at <code>k</code>; errors if missing and no <code>default</code> is given.</td></tr>
+        <tr><td><code>.clear()</code></td><td>Empties the map in place.</td></tr>
+        <tr><td><code>.copy()</code></td><td>A shallow copy, as a new map.</td></tr>
+        <tr><td><code>.update(other)</code></td><td>Merges <code>other</code> into this map in place, overwriting shared keys.</td></tr>
+        <tr><td><code>.setdefault(k, default)</code></td><td>Returns the value at <code>k</code> if present; otherwise sets it to <code>default</code> and returns that.</td></tr>
       </table>
       <p>
         As with lists, top-level equivalents exist: <code>keys(m)</code>,

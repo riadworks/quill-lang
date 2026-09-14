@@ -186,16 +186,25 @@ Paths are resolved relative to the importing file.
   contains `{...}`. Prefix it with `f` (`f"text {expr}"`) to interpolate,
   matching real Python's f-string convention exactly. Both forms support
   `\n`/`\t`/`\"` escapes and methods: `.upper()` `.lower()` `.trim()`
-  `.split(sep)` `.replace(a, b)` `.contains(s)` `.starts_with(s)`
-  `.ends_with(s)` `.find(s)` `.repeat(n)` `.title()`
+  `.trim_start()` `.trim_end()` `.split(sep)` `.replace(a, b)` `.contains(s)`
+  `.starts_with(s)` `.ends_with(s)` `.find(s)` `.index(s)` (like `.find()` but
+  raises if missing) `.count(s)` `.repeat(n)` `.pad_start(width, [ch])`
+  `.pad_end(width, [ch])` `.title()` `.capitalize()` `.swap_case()`
+  `.reverse()` `.is_digit()` `.is_alpha()` `.is_alnum()` `.is_upper()`
+  `.is_lower()` `.is_space()`
 - `true` / `false` / `nil`
 - Lists: `[1, 2, 3]`, indexed with `xs[0]`/`xs[-1]`, with methods:
-  `.push(x)` `.pop()`/`.pop(i)` `.sort()` `.reverse()` `.contains(x)` `.index_of(x)`
+  `.push(x)` `.pop()`/`.pop(i)` `.insert(i, x)` `.remove(x)` `.clear()`
+  `.copy()` `.extend(other)` `.count(x)` `.unique()` `.flatten()` `.sort()`
+  `.sort(key_fn)` `.sort(reverse)` `.reverse()` `.contains(x)` `.index_of(x)`
   `.join(sep)` `.map(f)` `.filter(f)` `.reduce(f, init)` (`.sort()` and
   `.reverse()` return a new list rather than mutating, matching the
-  standalone `sorted()`)
+  standalone `sorted()`; `.sort()`'s extra argument can be a key function, a
+  `true`/`false` for reverse order, or both, in either order)
 - Maps: `{"key": "value"}`, indexed with `m["key"]` or `m.key`, with methods:
   `.keys()` `.values()` `.items()` `.has(k)` `.get(k, default)`
+  `.pop(k, [default])` `.clear()` `.copy()` `.update(other)`
+  `.setdefault(k, default)`
 - Ternary expression: `"big" if x > 5 else "small"`
 - Comprehensions: `[x * x for x in xs if x > 0]`, `{k: v.upper() for k, v in m.items()}`,
   chaining multiple `for`/`if` clauses works the same as Python's does:
@@ -213,9 +222,20 @@ Paths are resolved relative to the importing file.
 `write_file`, `file_exists`, `serve`, `url_encode`, `json_encode`,
 `json_decode`, `sha256`, `password_hash`, `password_verify`, `random`,
 `random_int`, `random_choice`, `shuffle`, `env_get`, `http_get`, `http_post`,
-plus the constant `PI`. (The older top-level `push`/`pop`/`keys`/etc.
+`all`, `any`, `chr`, `ord`, `hex`, `oct`, `bin`, `pow`, `divmod`, `repr`,
+`log`, `exp`, `sin`, `cos`, `tan`, `gcd`, `map`, `filter`, `reduce`, plus
+the constants `PI` and `E`. (The older top-level `push`/`pop`/`keys`/etc.
 and the newer `.push()`/`.pop()`/`.keys()` method forms both work and do the
 same thing — the methods are just nicer to chain.)
+
+`sorted(list)`, `min(list)`, and `max(list)` all take an optional second
+argument, a one-argument key function - `sorted(people, pull(p): return
+p.age)` sorts by age without needing a custom comparator. `sorted()` also
+takes an optional `true`/`false` for reverse order (order-independent with
+the key function, since one is a function and the other a bool). The
+standalone `map(fn, list)`/`filter(fn, list)`/`reduce(fn, list, init)`
+do the same thing as `.map()`/`.filter()`/`.reduce()`, just with Python's
+argument order (function first) instead of the method-call receiver.
 
 `password_hash(password)` / `password_verify(password, hash)` are for real
 user passwords: salted PBKDF2-HMAC-SHA256 (260,000 iterations) with a

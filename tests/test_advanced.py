@@ -561,6 +561,179 @@ def test_password_verify_rejects_malformed_hash_instead_of_crashing():
     assert out.strip() == "false"
 
 
+def test_all_and_any():
+    out = run("print(all([1, 2, 3]))\nprint(all([1, 0, 3]))\nprint(any([0, 0, 3]))\nprint(any([0, 0]))\n")
+    assert out.splitlines() == ["true", "false", "true", "false"]
+
+
+def test_chr_and_ord_round_trip():
+    out = run('print(chr(65))\nprint(ord("A"))\nprint(chr(ord("z")))\n')
+    assert out.splitlines() == ["A", "65", "z"]
+
+
+def test_hex_oct_bin():
+    out = run("print(hex(255))\nprint(oct(8))\nprint(bin(5))\n")
+    assert out.splitlines() == ["0xff", "0o10", "0b101"]
+
+
+def test_pow_two_and_three_arg():
+    out = run("print(pow(2, 10))\nprint(pow(2, 10, 1000))\n")
+    assert out.splitlines() == ["1024", "24"]
+
+
+def test_divmod_returns_pair():
+    out = run("print(divmod(17, 5))\n")
+    assert out.strip() == "[3, 2]"
+
+
+def test_divmod_by_zero_is_clean_error():
+    msg = run_expect_error("divmod(1, 0)\n")
+    assert "divmod" in msg
+
+
+def test_repr_quotes_strings_but_not_numbers():
+    out = run('print(repr("hi"))\nprint(repr(5))\n')
+    assert out.splitlines() == ['"hi"', "5"]
+
+
+def test_math_functions():
+    out = run("print(round(exp(1), 5))\nprint(round(sin(0), 5))\nprint(round(cos(0), 5))\nprint(gcd(12, 18))\n")
+    assert out.splitlines() == ["2.71828", "0", "1", "6"]
+
+
+def test_log_default_and_custom_base():
+    out = run("print(round(log(E), 10))\nprint(log(8, 2))\n")
+    assert out.splitlines() == ["1", "3"]
+
+
+def test_top_level_map_filter_reduce():
+    out = run(
+        "print(map(pull(x): return x * 2, [1, 2, 3]))\n"
+        "print(filter(pull(x): return x > 1, [1, 2, 3]))\n"
+        "print(reduce(pull(acc, x): return acc + x, [1, 2, 3], 0))\n"
+    )
+    assert out.splitlines() == ["[2, 4, 6]", "[2, 3]", "6"]
+
+
+def test_sorted_with_key_and_with_reverse():
+    out = run(
+        'let people = [{"name": "Bo", "age": 30}, {"name": "Al", "age": 20}]\n'
+        'print(sorted(people, pull(p): return p["age"])[0]["name"])\n'
+        "print(sorted([3, 1, 2], true))\n"
+    )
+    assert out.splitlines() == ["Al", "[3, 2, 1]"]
+
+
+def test_min_max_with_key():
+    out = run(
+        'let people = [{"name": "Bo", "age": 30}, {"name": "Al", "age": 20}]\n'
+        'print(min(people, pull(p): return p["age"])["name"])\n'
+        'print(max(people, pull(p): return p["age"])["name"])\n'
+    )
+    assert out.splitlines() == ["Al", "Bo"]
+
+
+def test_new_string_methods():
+    out = run(
+        'print("hello world".count("o"))\n'
+        'print("5".pad_start(3, "0"))\n'
+        'print("5".pad_end(3, "-"))\n'
+        'print("hello".capitalize())\n'
+        'print("Hello".swap_case())\n'
+        'print("hello".reverse())\n'
+        'print("  hi".trim_start())\n'
+        'print("hi  ".trim_end())\n'
+        'print("hello".index("l"))\n'
+    )
+    assert out.splitlines() == ["2", "005", "5--", "Hello", "hELLO", "olleh", "hi", "hi", "2"]
+
+
+def test_string_predicate_methods():
+    out = run(
+        'print("123".is_digit())\n'
+        'print("abc".is_alpha())\n'
+        'print("abc123".is_alnum())\n'
+        'print("ABC".is_upper())\n'
+        'print("abc".is_lower())\n'
+        'print("   ".is_space())\n'
+    )
+    assert out.splitlines() == ["true"] * 6
+
+
+def test_string_index_raises_when_not_found():
+    msg = run_expect_error('"hello".index("z")\n')
+    assert "not found" in msg
+
+
+def test_repeat_with_bad_argument_is_a_clean_error_not_a_traceback():
+    msg = run_expect_error('"abc".repeat("x")\n')
+    assert "repeat" in msg and "number" in msg
+
+
+def test_new_list_methods():
+    out = run(
+        "let xs = [1, 2, 3]\n"
+        "xs.insert(1, 99)\n"
+        "print(xs)\n"
+        "xs.remove(99)\n"
+        "print(xs)\n"
+        "print(xs.copy())\n"
+        "let ys = [1, 2]\n"
+        "ys.extend([3, 4])\n"
+        "print(ys)\n"
+        "print([1, 2, 2, 3].count(2))\n"
+        "print([1, 2, 2, 3, 1].unique())\n"
+        "print([[1, 2], [3], 4].flatten())\n"
+        "let zs = [1, 2, 3]\n"
+        "zs.clear()\n"
+        "print(zs)\n"
+    )
+    assert out.splitlines() == [
+        "[1, 99, 2, 3]",
+        "[1, 2, 3]",
+        "[1, 2, 3]",
+        "[1, 2, 3, 4]",
+        "2",
+        "[1, 2, 3]",
+        "[1, 2, 3, 4]",
+        "[]",
+    ]
+
+
+def test_list_remove_missing_value_is_clean_error():
+    msg = run_expect_error("[1, 2].remove(99)\n")
+    assert "not found" in msg
+
+
+def test_new_map_methods():
+    out = run(
+        '''let m = {"a": 1, "b": 2}
+print(m.pop("a"))
+print(m)
+print(m.copy())
+m.update({"c": 3})
+print(m)
+print(m.setdefault("d", 4))
+print(m.setdefault("d", 99))
+print(m)
+'''
+    )
+    assert out.splitlines() == [
+        "1",
+        '{"b": 2}',
+        '{"b": 2}',
+        '{"b": 2, "c": 3}',
+        "4",
+        "4",
+        '{"b": 2, "c": 3, "d": 4}',
+    ]
+
+
+def test_map_pop_missing_key_without_default_is_clean_error():
+    msg = run_expect_error('{"a": 1}.pop("z")\n')
+    assert "not found" in msg
+
+
 def test_random_int_stays_in_range():
     out = run(
         "let ok = true\n"

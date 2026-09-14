@@ -81,8 +81,15 @@
         <tr><td><code>round(n)</code> / <code>round(n, digits)</code></td><td>Rounds to the nearest integer, or to <code>digits</code> decimal places.</td></tr>
         <tr><td><code>sqrt(n)</code></td><td>Square root (error on a negative input).</td></tr>
         <tr><td><code>floor(n)</code> / <code>ceil(n)</code></td><td>Round down / up to the nearest integer.</td></tr>
-        <tr><td><code>sum(list)</code> / <code>min(list)</code> / <code>max(list)</code></td><td>Over a list of numbers.</td></tr>
-        <tr><td><code>PI</code></td><td>The constant <code>3.141592653589793</code> (not a function — no parentheses).</td></tr>
+        <tr><td><code>sum(list)</code></td><td>Over a list of numbers.</td></tr>
+        <tr><td><code>min(list, [key_fn])</code> / <code>max(list, [key_fn])</code></td><td>With an optional one-argument key function, same idea as <code>sorted()</code> below.</td></tr>
+        <tr><td><code>pow(base, exp)</code> / <code>pow(base, exp, mod)</code></td><td>Same as <code>**</code>, plus a 3-argument form for fast modular exponentiation.</td></tr>
+        <tr><td><code>divmod(a, b)</code></td><td><code>[a // b, a % b]</code> as a two-element list, computed together.</td></tr>
+        <tr><td><code>log(n)</code> / <code>log(n, base)</code></td><td>Natural log, or log to a given base.</td></tr>
+        <tr><td><code>exp(n)</code></td><td><code>E</code> raised to the power <code>n</code>.</td></tr>
+        <tr><td><code>sin(n)</code> / <code>cos(n)</code> / <code>tan(n)</code></td><td>Trig functions, in radians.</td></tr>
+        <tr><td><code>gcd(a, b)</code></td><td>Greatest common divisor.</td></tr>
+        <tr><td><code>PI</code> / <code>E</code></td><td>The constants <code>3.141592653589793</code> and <code>2.718281828459045</code> (not functions — no parentheses).</td></tr>
       </table>
       <div class="callout">
         <span class="callout-label">Gotcha</span>
@@ -103,14 +110,25 @@
         <tr><td><code>push(list, x)</code> / <code>pop(list)</code> / <code>pop(list, i)</code></td><td>Same as <code>.push()</code>/<code>.pop()</code>.</td></tr>
         <tr><td><code>keys(map)</code> / <code>values(map)</code> / <code>items(map)</code></td><td>Same as the map methods.</td></tr>
         <tr><td><code>has(container, needle)</code></td><td>Works on a map (key), list (element), or string (substring).</td></tr>
-        <tr><td><code>sorted(list)</code></td><td>New sorted list; needs all-comparable elements.</td></tr>
+        <tr><td><code>sorted(list, [key_fn], [reverse])</code></td><td>New sorted list; needs all-comparable elements (or all-comparable key results). <code>key_fn</code> and <code>reverse</code> (a bool) can be given in either order, or omitted.</td></tr>
+        <tr><td><code>all(list)</code> / <code>any(list)</code></td><td>Whether every / any element is truthy.</td></tr>
+        <tr><td><code>map(fn, list)</code> / <code>filter(fn, list)</code> / <code>reduce(fn, list, init)</code></td><td>Top-level equivalents of <code>.map()</code>/<code>.filter()</code>/<code>.reduce()</code>, with Python's function-first argument order.</td></tr>
         <tr><td><code>slice(seq, start, end)</code></td><td>Substring or sub-list, since there's no <code>[a:b]</code> syntax.</td></tr>
         <tr><td><code>enumerate(list)</code></td><td>List of <code>[index, value]</code> pairs.</td></tr>
         <tr><td><code>zip(a, b)</code></td><td>List of <code>[a_item, b_item]</code> pairs, stopping at the shorter list.</td></tr>
       </table>
+      <pre class="code-block"><span class="kw">let</span> people = [{<span class="str">"name"</span>: <span class="str">"Bo"</span>, <span class="str">"age"</span>: 30}, {<span class="str">"name"</span>: <span class="str">"Al"</span>, <span class="str">"age"</span>: 20}]
+<span class="fnname">print</span>(sorted(people, <span class="kw">pull</span>(p): <span class="kw">return</span> p[<span class="str">"age"</span>]))   <span class="cmt"># sorted by age, ascending</span>
+<span class="fnname">print</span>(map(<span class="kw">pull</span>(x): <span class="kw">return</span> x * x, [1, 2, 3]))     <span class="cmt"># [1, 4, 9]</span></pre>
 
       <h2>Type conversion &amp; inspection</h2>
-      <p>Covered in <a href="02-variables-and-types.html">Lesson 2</a>: <code>type(v)</code>, <code>str(v)</code>, <code>num(v)</code>, <code>bool(v)</code>.</p>
+      <p><code>type(v)</code>, <code>str(v)</code>, <code>num(v)</code>, <code>bool(v)</code> are covered in <a href="02-variables-and-types.html">Lesson 2</a>. A few more:</p>
+      <table class="ref">
+        <tr><th>Function</th><th>Does</th></tr>
+        <tr><td><code>repr(v)</code></td><td>Like <code>str(v)</code>, but a string comes back quoted — the same form you'd see nested inside a printed list or map.</td></tr>
+        <tr><td><code>chr(n)</code> / <code>ord(s)</code></td><td>Number to one-character string, and back.</td></tr>
+        <tr><td><code>hex(n)</code> / <code>oct(n)</code> / <code>bin(n)</code></td><td>Number to a <code>"0x.."</code>/<code>"0o.."</code>/<code>"0b.."</code> string.</td></tr>
+      </table>
 
       <h2>Input &amp; output</h2>
       <table class="ref">
