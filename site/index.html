@@ -54,7 +54,7 @@
       "name": "What does Quill look like day to day?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Python-style indentation instead of braces, a pull keyword for functions, and real f-strings: f\"hi {name}\" interpolates, plain \"hi {name}\" never does."
+        "text": "Python-style indentation instead of braces, a pull keyword for functions, and real f-strings - f\"hi {name}\" interpolates, plain \"hi {name}\" never does. The code sample above is a complete, runnable example."
       }
     },
     {
@@ -62,7 +62,7 @@
       "name": "Do I need Python installed to use it?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "For this build, yes: Quill's reference implementation is a tree-walking interpreter written in Python. A separate Rust port exists with the same language and no Python runtime required, at the cost of being a second codebase to keep in sync."
+        "text": "For this build, yes - Quill's reference implementation is a tree-walking interpreter written in Python. A separate Rust port exists with the same language and no Python runtime required, at the cost of being a second codebase to keep in sync."
       }
     },
     {
@@ -78,7 +78,7 @@
       "name": "Can I actually build something with it, or is it just a toy grammar?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "A handful of real, working apps ship with the project: a persistent CLI task manager, the same task manager as a website with a JSON API, a URL shortener, a text adventure, a password generator, and a number-guessing game."
+        "text": "A handful of real, working apps ship with the project: a persistent CLI task manager, the same task manager as a website with a JSON API, a URL shortener, a text adventure, a password generator, and a number-guessing game. Each one ran and hit real bugs during development, which got fixed in the language itself."
       }
     },
     {
@@ -86,7 +86,7 @@
       "name": "What's missing?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Multiple inheritance, reflected operators, a package manager, async/concurrency, and static typing are all left out for now, on purpose, to keep what exists solid rather than spreading thinner."
+        "text": "Multiple inheritance, reflected operators (__radd__-style), a package manager, async/concurrency, and static typing are all left out for now, on purpose, to keep what exists solid rather than spreading thinner."
       }
     }
   ]
