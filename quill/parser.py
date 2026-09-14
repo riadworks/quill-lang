@@ -225,10 +225,13 @@ class Parser:
     def parse_class(self):
         tok = self.advance()
         name = self.expect(T.NAME, "expected a class name").value
-        superclass_name = None
+        superclass_names = []
         if self.match(T.LPAREN):
-            superclass_name = self.expect(T.NAME, "expected a superclass name").value
-            self.expect(T.RPAREN, "expected ')' after superclass name")
+            if not self.check(T.RPAREN):
+                superclass_names.append(self.expect(T.NAME, "expected a superclass name").value)
+                while self.match(T.COMMA):
+                    superclass_names.append(self.expect(T.NAME, "expected a superclass name").value)
+            self.expect(T.RPAREN, "expected ')' after superclass list")
         self.expect(T.COLON, "expected ':' to start the class body")
         self.expect(T.NEWLINE, "expected a newline after ':'")
         self.expect(T.INDENT, "expected an indented class body")
@@ -242,7 +245,7 @@ class Parser:
             methods[mname] = A.FnExpr(params, defaults, body, name=mname, line=mtok.line)
             self.skip_newlines()
         self.expect(T.DEDENT, "expected the class body to end (dedent)")
-        return A.ClassDecl(name, superclass_name, methods, line=tok.line)
+        return A.ClassDecl(name, superclass_names, methods, line=tok.line)
 
     def parse_try(self):
         tok = self.advance()

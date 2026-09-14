@@ -21,7 +21,7 @@ This provides a `quill` command: run with no arguments for a REPL, or `quill scr
 
 ## What's implemented
 
-- Classes with single inheritance, `super.method()` resolving correctly through deep chains
+- Classes with multiple inheritance (Python-style, C3-linearized MRO), `super.method()` resolving correctly through deep chains and diamond hierarchies
 - Exceptions: `try` / `except` / `finally`, catching both user `raise`s and built-in runtime errors
 - Closures and first-class functions, with Python-style default parameter values (re-evaluated per call, so no shared-mutable-default gotcha)
 - A module system (`import "file.ql" as name`)
@@ -35,7 +35,7 @@ This provides a `quill` command: run with no arguments for a REPL, or `quill scr
 
 ## What's not implemented
 
-Multiple inheritance, reflected operators (`__radd__`-style), a package manager, async/concurrency, and static typing.
+Reflected operators (`__radd__`-style), a package manager, async/concurrency, and static typing.
 
 ## Real programs built with it
 

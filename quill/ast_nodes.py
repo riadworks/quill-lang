@@ -207,7 +207,7 @@ class ContinueStmt:
 @dataclass
 class ClassDecl:
     name: str
-    superclass_name: Optional[str]
+    superclass_names: list  # list[str], declared left-to-right; empty if no bases
     methods: dict  # name -> FnExpr
     line: int = 0
 

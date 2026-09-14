@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Classes and Inheritance in Quill</title>
-<meta name="description" content="Defining classes, init and self, fields, single inheritance, and super in Quill.">
+<meta name="description" content="Defining classes, init and self, fields, single and multiple inheritance, and super in Quill.">
 <meta name="robots" content="index, follow">
 <meta name="theme-color" content="#14161d">
 <link rel="canonical" href="https://quill-lang.example/learn/08-classes-and-inheritance.html">
@@ -14,7 +14,7 @@
 <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Classes and Inheritance in Quill">
-<meta property="og:description" content="Defining classes, init and self, single inheritance, and super.">
+<meta property="og:description" content="Defining classes, init and self, multiple inheritance, and super.">
 <meta property="og:url" content="https://quill-lang.example/learn/08-classes-and-inheritance.html">
 <meta property="og:site_name" content="Quill">
 </head>
@@ -70,7 +70,7 @@
       <p class="lede">
         Quill's classes are deliberately simple: no field declarations, no visibility
         modifiers, no static members — just methods, an implicit <code>self</code>, and
-        single inheritance.
+        inheritance, including multiple inheritance.
       </p>
 
       <h2>Defining a class</h2>
@@ -97,7 +97,7 @@
         declared as a parameter; it's bound automatically inside every method.
       </p>
 
-      <h2>Single inheritance and <code>super</code></h2>
+      <h2>Inheritance and <code>super</code></h2>
       <pre class="code-block"><span class="kw">class</span> <span class="cls">Dog</span>(Animal):
     <span class="kw">pull</span> <span class="fnname">init</span>(name, breed):
         super.init(name)
@@ -110,12 +110,48 @@
 <span class="fnname">print</span>(rex.speak())     <span class="cmt"># Rex the Labrador barks</span>
 <span class="fnname">print</span>(type(rex))     <span class="cmt"># Dog</span></pre>
       <p>
-        <code>class Dog(Animal):</code> is the only inheritance syntax — one optional
-        parent class in parentheses after the name. There's no multiple inheritance.
-        <code>super.method(...)</code> calls the parent class's version of a method, and it
-        resolves correctly no matter how deep the chain gets: each method remembers the
-        class it was <em>defined</em> in, so <code>super</code> inside it always means
-        "that class's parent," regardless of which subclass's instance actually called it.
+        <code>class Dog(Animal):</code> puts one or more parent classes in parentheses
+        after the name. <code>super.method(...)</code> calls the ancestor's version of a
+        method, and it resolves correctly no matter how deep the chain gets: each method
+        remembers the class it was <em>defined</em> in, so <code>super</code> inside it
+        always climbs from that class, regardless of which subclass's instance actually
+        called it.
+      </p>
+
+      <h2>Multiple inheritance</h2>
+      <p>
+        Quill allows more than one parent class, exactly like Python:
+        <code>class Combined(Mixin1, Mixin2):</code>. Method lookup and <code>super</code>
+        both follow a Method Resolution Order (MRO) computed with the same C3
+        linearization algorithm Python uses. That matters most for a "diamond" —
+        two classes sharing a common ancestor, both inherited by a third:
+      </p>
+      <pre class="code-block"><span class="kw">class</span> <span class="cls">A</span>:
+    <span class="kw">pull</span> <span class="fnname">greet</span>():
+        <span class="kw">return</span> <span class="str">"A"</span>
+
+<span class="kw">class</span> <span class="cls">B</span>(A):
+    <span class="kw">pull</span> <span class="fnname">greet</span>():
+        <span class="kw">return</span> <span class="str">"B->"</span> + super.greet()
+
+<span class="kw">class</span> <span class="cls">C</span>(A):
+    <span class="kw">pull</span> <span class="fnname">greet</span>():
+        <span class="kw">return</span> <span class="str">"C->"</span> + super.greet()
+
+<span class="kw">class</span> <span class="cls">D</span>(B, C):
+    <span class="kw">pull</span> <span class="fnname">greet</span>():
+        <span class="kw">return</span> <span class="str">"D->"</span> + super.greet()
+
+<span class="fnname">print</span>(D().greet())    <span class="cmt"># D->B->C->A</span></pre>
+      <p>
+        <code>D</code>'s MRO is <code>[D, B, C, A]</code>. Each <code>super.greet()</code>
+        call resolves against the calling instance's full MRO, starting right after the
+        class the current method was defined in — not just that class's own first parent.
+        That's what makes <code>A</code> get visited exactly once here, in a consistent
+        order, instead of the result depending on which branch (<code>B</code> or
+        <code>C</code>) happens to be walked first. Listing the same base twice, or a
+        base list with no consistent ordering, is a clear error the moment the class is
+        declared.
       </p>
 
       <h2>Accessing fields and methods</h2>
@@ -163,6 +199,20 @@ rex.nonexistent    <span class="cmt"># RuntimeErr: 'Dog' has no field or method 
                 not the runtime type of the instance it was called on (<code>Cat</code>) —
                 so it climbs exactly one level from <code>Dog</code>, to <code>Animal</code>,
                 regardless of how far down the actual instance's class is.
+              </p>
+            </div></details>
+          </li>
+          <li>
+            In the diamond above (<code>D(B, C)</code>, both extending <code>A</code>),
+            why does <code>A.greet()</code> only run once instead of twice?
+            <details><summary></summary><div>
+              <p>
+                Because <code>super</code> resolves against <code>D</code>'s single
+                linearized MRO (<code>[D, B, C, A]</code>), not against each parent's own
+                separate chain. <code>B</code>'s <code>super.greet()</code> continues from
+                wherever <code>B</code> sits in <em>that</em> MRO — landing on
+                <code>C</code>, not back on <code>A</code> — so <code>A</code> is reached
+                exactly once, after both <code>B</code> and <code>C</code> have run.
               </p>
             </div></details>
           </li>

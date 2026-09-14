@@ -146,9 +146,42 @@ print(rex.speak())    # Rex the Labrador barks
 print(type(rex))      # Dog
 ```
 
-Single inheritance. `super.method(...)` calls the parent's version and
-resolves correctly through arbitrarily deep chains. No `self` parameter to
-declare; it's bound automatically inside methods.
+`super.method(...)` calls the ancestor's version and resolves correctly
+through arbitrarily deep chains. No `self` parameter to declare; it's bound
+automatically inside methods.
+
+Multiple inheritance works like Python's: `class Combined(Mixin1, Mixin2):`
+lists as many bases as you want. Method lookup and `super` both follow a
+C3-linearized MRO (the same algorithm Python uses), so a diamond shape -
+two classes sharing a common ancestor, both inherited by a third - visits
+that shared ancestor exactly once, in a consistent left-to-right order,
+instead of the result depending on which branch happens to be searched
+first:
+
+```
+class A:
+    pull greet():
+        return "A"
+
+class B(A):
+    pull greet():
+        return "B->" + super.greet()
+
+class C(A):
+    pull greet():
+        return "C->" + super.greet()
+
+class D(B, C):
+    pull greet():
+        return "D->" + super.greet()
+
+print(D().greet())    # D->B->C->A
+```
+
+Listing the same base twice, or a base list with no consistent
+linearization (Python's own classic `X(A, B)` / `Y(B, A)` / `Z(X, Y)`
+conflict), is a clear error at class-declaration time rather than silently
+picking an arbitrary order.
 
 ### Operator overloading
 
@@ -397,10 +430,10 @@ memory.
 
 ## What's deliberately not here yet
 
-Multiple inheritance, reflected operators (`__radd__`-style), a package
-manager / third-party libraries, async/concurrency, static typing. All
-reasonable next steps if this keeps growing — left out to keep what's here
-solid and well-tested rather than spreading thinner.
+Reflected operators (`__radd__`-style), a package manager / third-party
+libraries, async/concurrency, static typing. All reasonable next steps if
+this keeps growing — left out to keep what's here solid and well-tested
+rather than spreading thinner.
 
 ## Project layout
 

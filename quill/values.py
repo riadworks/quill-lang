@@ -38,19 +38,57 @@ class BuiltinFunction:
         return f"<builtin {self.name}>"
 
 
-class QuillClass:
-    __slots__ = ("name", "methods", "superclass")
+class MroError(Exception):
+    """Raised when a class's bases have no consistent method resolution order."""
 
-    def __init__(self, name, methods, superclass=None):
+
+def _c3_merge(sequences):
+    sequences = [list(seq) for seq in sequences if seq]
+    result = []
+    while sequences:
+        candidate = None
+        for seq in sequences:
+            head = seq[0]
+            if not any(head in other[1:] for other in sequences):
+                candidate = head
+                break
+        if candidate is None:
+            raise MroError("cannot create a consistent method resolution order")
+        result.append(candidate)
+        for seq in sequences:
+            if seq and seq[0] is candidate:
+                del seq[0]
+        sequences = [seq for seq in sequences if seq]
+    return result
+
+
+def compute_mro(superclasses):
+    """C3-linearize a class's base list the way Python does: every ancestor
+    appears exactly once, a class always precedes its own ancestors, and the
+    declared left-to-right base order is preserved wherever the hierarchy
+    allows it. This is what lets cooperative `super` calls walk a diamond
+    (e.g. D(B, C) where both B and C extend A) and visit the shared ancestor
+    exactly once, instead of the result depending on which branch happens to
+    be searched first.
+    """
+    if not superclasses:
+        return []
+    return _c3_merge([list(s.mro) for s in superclasses] + [list(superclasses)])
+
+
+class QuillClass:
+    __slots__ = ("name", "methods", "superclasses", "mro")
+
+    def __init__(self, name, methods, superclasses, mro):
         self.name = name
         self.methods = methods  # dict[str, QuillFunction]
-        self.superclass = superclass
+        self.superclasses = superclasses  # list[QuillClass], declared order
+        self.mro = mro  # list[QuillClass], self first, C3-linearized
 
     def find_method(self, name):
-        if name in self.methods:
-            return self.methods[name]
-        if self.superclass is not None:
-            return self.superclass.find_method(name)
+        for klass in self.mro:
+            if name in klass.methods:
+                return klass.methods[name]
         return None
 
     def __repr__(self):
@@ -80,11 +118,29 @@ class BoundInstanceMethod:
 
 
 class SuperProxy:
-    __slots__ = ("instance", "superclass")
+    """`super` inside a method: resolves against the *instance's own* MRO,
+    starting right after the class the currently-running method was defined
+    in - not just that class's first declared base. That's what makes
+    cooperative multiple inheritance work: a diamond's shared ancestor is
+    reached once, in a consistent order, matching Python's `super()`.
+    """
 
-    def __init__(self, instance, superclass):
+    __slots__ = ("instance", "owner_class")
+
+    def __init__(self, instance, owner_class):
         self.instance = instance
-        self.superclass = superclass
+        self.owner_class = owner_class
+
+    def find_method(self, name):
+        mro = self.instance.klass.mro
+        try:
+            start = mro.index(self.owner_class) + 1
+        except ValueError:
+            start = len(mro)
+        for klass in mro[start:]:
+            if name in klass.methods:
+                return klass.methods[name]
+        return None
 
 
 class BoundBuiltinMethod:

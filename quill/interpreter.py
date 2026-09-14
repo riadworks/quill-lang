@@ -5,10 +5,12 @@ from quill.values import (
     BoundBuiltinMethod,
     BoundInstanceMethod,
     BuiltinFunction,
+    MroError,
     QuillClass,
     QuillFunction,
     QuillInstance,
     SuperProxy,
+    compute_mro,
     is_truthy,
     quill_equals,
     quill_str,
@@ -130,12 +132,27 @@ class Interpreter:
             raise RuntimeErr("invalid assignment target", stmt.line)
 
     def exec_ClassDecl(self, stmt: A.ClassDecl, env):
-        superclass = None
-        if stmt.superclass_name is not None:
-            superclass = env.get(stmt.superclass_name, stmt.line)
-            if not isinstance(superclass, QuillClass):
-                raise RuntimeErr(f"'{stmt.superclass_name}' is not a class", stmt.line)
-        quill_class = QuillClass(stmt.name, {}, superclass)
+        seen_names = set()
+        superclasses = []
+        for sc_name in stmt.superclass_names:
+            if sc_name in seen_names:
+                raise RuntimeErr(f"class '{stmt.name}' lists base class '{sc_name}' more than once", stmt.line)
+            seen_names.add(sc_name)
+            sc = env.get(sc_name, stmt.line)
+            if not isinstance(sc, QuillClass):
+                raise RuntimeErr(f"'{sc_name}' is not a class", stmt.line)
+            superclasses.append(sc)
+        try:
+            bases_mro = compute_mro(superclasses)
+        except MroError:
+            base_names = ", ".join(sc.name for sc in superclasses)
+            raise RuntimeErr(
+                f"cannot create a consistent method resolution order for class "
+                f"'{stmt.name}' with bases ({base_names})",
+                stmt.line,
+            )
+        quill_class = QuillClass(stmt.name, {}, superclasses, mro=[])
+        quill_class.mro = [quill_class] + bases_mro
         quill_class.methods = {
             name: QuillFunction(name, fn_expr.params, fn_expr.defaults, fn_expr.body, env, owner_class=quill_class)
             for name, fn_expr in stmt.methods.items()
@@ -437,10 +454,10 @@ class Interpreter:
 
     def eval_SuperExpr(self, expr: A.SuperExpr, env):
         self_instance = env.get("self", expr.line)
-        superclass = env.get("__super_class__", expr.line)
-        if superclass is None:
-            raise RuntimeErr("'super' used outside of a subclass method", expr.line)
-        return SuperProxy(self_instance, superclass)
+        owner_class = env.get("__super_class__", expr.line)
+        if owner_class is None:
+            raise RuntimeErr("'super' used outside of a method", expr.line)
+        return SuperProxy(self_instance, owner_class)
 
     def _get_attr(self, obj, name, line):
         if isinstance(obj, QuillInstance):
@@ -451,9 +468,9 @@ class Interpreter:
                 return BoundInstanceMethod(obj, method)
             raise RuntimeErr(f"'{obj.klass.name}' has no field or method '{name}'", line)
         if isinstance(obj, SuperProxy):
-            method = obj.superclass.find_method(name)
+            method = obj.find_method(name)
             if method is None:
-                raise RuntimeErr(f"'{obj.superclass.name}' has no method '{name}'", line)
+                raise RuntimeErr(f"'{obj.owner_class.name}' has no ancestor with method '{name}'", line)
             return BoundInstanceMethod(obj.instance, method)
         if isinstance(obj, dict):
             if name in obj:
@@ -512,7 +529,7 @@ class Interpreter:
         call_env = Environment(fn.closure)
         if self_instance is not None:
             call_env.declare("self", self_instance)
-            call_env.declare("__super_class__", fn.owner_class.superclass if fn.owner_class else None)
+            call_env.declare("__super_class__", fn.owner_class)
         # Defaults are evaluated here, in the call's own environment, rather than
         # once at definition time the way Python does it - so a default can refer
         # to an earlier parameter (`pull f(a, b=a*2):`), and there's no equivalent

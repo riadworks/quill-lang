@@ -59,6 +59,112 @@ def test_three_level_inheritance_super_chain():
     assert out == "ABC\n"
 
 
+def test_multiple_inheritance_independent_mixins():
+    out = run(
+        "class Mixin1:\n"
+        "    pull hello():\n"
+        '        return "hi"\n'
+        "class Mixin2:\n"
+        "    pull bye():\n"
+        '        return "bye"\n'
+        "class Combined(Mixin1, Mixin2):\n"
+        "    pull init():\n"
+        "        self.x = 1\n"
+        "let c = Combined()\n"
+        "print(c.hello())\n"
+        "print(c.bye())\n"
+        "print(type(c))\n"
+    )
+    assert out == "hi\nbye\nCombined\n"
+
+
+def test_multiple_inheritance_diamond_cooperative_super():
+    # D(B, C) where both B and C extend A. C3 linearization gives D's MRO as
+    # [D, B, C, A] (same as Python's for this exact shape), so cooperative
+    # super calls visit the shared ancestor A exactly once, in a consistent
+    # order, regardless of which branch is walked first.
+    out = run(
+        "class A:\n"
+        "    pull greet():\n"
+        '        return "A"\n'
+        "class B(A):\n"
+        "    pull greet():\n"
+        '        return "B->" + super.greet()\n'
+        "class C(A):\n"
+        "    pull greet():\n"
+        '        return "C->" + super.greet()\n'
+        "class D(B, C):\n"
+        "    pull greet():\n"
+        '        return "D->" + super.greet()\n'
+        "print(D().greet())\n"
+    )
+    assert out == "D->B->C->A\n"
+
+
+def test_multiple_inheritance_method_lookup_follows_base_order():
+    # When two bases both define the same method and the subclass doesn't
+    # override it, the first-listed base wins - matching Python's left-to-right
+    # MRO precedence.
+    out = run(
+        "class A:\n"
+        "    pull which():\n"
+        '        return "A"\n'
+        "class B:\n"
+        "    pull which():\n"
+        '        return "B"\n'
+        "class First(A, B):\n"
+        "    pull init(): self.x = 1\n"
+        "class Second(B, A):\n"
+        "    pull init(): self.x = 1\n"
+        "print(First().which())\n"
+        "print(Second().which())\n"
+    )
+    assert out == "A\nB\n"
+
+
+def test_multiple_inheritance_duplicate_base_is_an_error():
+    msg = run_expect_error(
+        "class Base:\n"
+        "    pull init(): self.x = 1\n"
+        "class Bad(Base, Base):\n"
+        "    pull noop(): return 0\n"
+    )
+    assert "more than once" in msg
+
+
+def test_multiple_inheritance_inconsistent_mro_is_an_error():
+    # Python's own classic example: X(A, B) and Y(B, A) disagree on the
+    # relative order of A and B, so Z(X, Y) has no consistent linearization.
+    msg = run_expect_error(
+        "class A:\n"
+        "    pull noop(): return 0\n"
+        "class B:\n"
+        "    pull noop(): return 0\n"
+        "class X(A, B):\n"
+        "    pull noop(): return 0\n"
+        "class Y(B, A):\n"
+        "    pull noop(): return 0\n"
+        "class Z(X, Y):\n"
+        "    pull noop(): return 0\n"
+    )
+    assert "consistent method resolution order" in msg
+
+
+def test_super_with_no_ancestor_method_is_an_error():
+    msg = run_expect_error(
+        "class Bar:\n"
+        "    pull noop():\n"
+        "        return super.noop()\n"
+        "Bar().noop()\n"
+    )
+    assert "has no ancestor with method" in msg
+
+
+def test_class_empty_parens_means_no_bases():
+    out = run("class Foo():\n    pull init():\n        self.x = 1\nprint(Foo().x)\n")
+    assert out == "1\n"
+
+
 def test_class_wrong_init_arity_error():
     msg = run_expect_error(
         "class Point:\n"
