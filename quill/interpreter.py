@@ -539,6 +539,8 @@ class Interpreter:
                 raise RuntimeErr(f"list index out of range", line)
             return obj[index]
         if isinstance(obj, dict):
+            if not isinstance(index, (str, int, float, bool)):
+                raise RuntimeErr(f"map keys must be a string, number, or bool, not {type_name(index)}", line)
             if index not in obj:
                 raise RuntimeErr(f"key not found: {index!r}", line)
             return obj[index]
@@ -563,6 +565,8 @@ class Interpreter:
             obj[index] = value
             return
         if isinstance(obj, dict):
+            if not isinstance(index, (str, int, float, bool)):
+                raise RuntimeErr(f"map keys must be a string, number, or bool, not {type_name(index)}", line)
             obj[index] = value
             return
         raise RuntimeErr(f"cannot assign into a {type_name(obj)}", line)

@@ -1198,6 +1198,83 @@ def test_tau_constant():
     assert out.strip() == "2"
 
 
+def test_string_needle_methods_reject_non_string_arg_cleanly():
+    # regression test: these used to crash with a raw, uncatchable Python
+    # TypeError instead of a clean, catchable Quill error
+    for expr in [
+        '"hello".contains(5)',
+        '"hello".starts_with(5)',
+        '"hello".ends_with(5)',
+        '"hello".find(5)',
+        '"hello".index(5)',
+        '"hello".count(5)',
+        '"hello".replace(5, "x")',
+        '"hello".replace("h", 5)',
+        '"hello".remove_prefix(5)',
+        '"hello".remove_suffix(5)',
+        '"a,b".split(5)',
+    ]:
+        msg = run_expect_error(expr + "\n")
+        assert "expects a string" in msg, f"{expr!r} -> {msg!r}"
+
+
+def test_string_needle_methods_still_work_normally():
+    out = run(
+        'print("hello".contains("ell"))\n'
+        'print("hello".starts_with("he"))\n'
+        'print("hello".ends_with("lo"))\n'
+        'print("hello".replace("l", "L"))\n'
+        'print("a,b".split(","))\n'
+    )
+    assert out.splitlines() == ["true", "true", "true", "heLLo", '["a", "b"]']
+
+
+def test_map_lookup_with_unhashable_key_is_a_clean_error_not_a_crash():
+    # regression test: m[[1,2]], .has(), .get(), .pop(), .setdefault(), and the
+    # top-level has() all used to crash with a raw Python TypeError
+    for expr in [
+        '{"a": 1}.has([1, 2])',
+        '{"a": 1}.get([1, 2])',
+        '{"a": 1}.pop([1, 2])',
+        '{"a": 1}.setdefault([1, 2], "x")',
+        'has({"a": 1}, [1, 2])',
+        '{"a": 1}[[1, 2]]',
+    ]:
+        msg = run_expect_error(f"print({expr})\n")
+        assert "map keys must be" in msg, f"{expr!r} -> {msg!r}"
+
+
+def test_map_index_assignment_with_unhashable_key_is_a_clean_error():
+    msg = run_expect_error('let m = {"a": 1}\nm[[1, 2]] = "x"\n')
+    assert "map keys must be" in msg
+
+
+def test_map_lookups_still_work_normally():
+    out = run(
+        '''let m = {"a": 1}
+print(m.has("a"))
+print(m.get("a"))
+print(m["a"])
+m["b"] = 2
+print(m)
+'''
+    )
+    assert out.splitlines() == ["true", "1", "1", '{"a": 1, "b": 2}']
+
+
+def test_two_string_functions_report_which_argument_and_type_are_wrong():
+    assert "string key" in run_expect_error('hmac_sha256(5, "msg")\n')
+    assert "string password" in run_expect_error('password_verify(5, "x")\n')
+    assert "string pattern" in run_expect_error('regex_match(5, "x")\n')
+
+
+def test_list_remove_and_map_pop_error_wording():
+    msg = run_expect_error("[1, 2, 3].remove(99)\n")
+    assert msg == "value not found in list: 99 (line 1)"
+    msg = run_expect_error('{"a": 1}.pop("z")\n')
+    assert msg == "key not found: 'z' (line 1)"
+
+
 def test_random_int_stays_in_range():
     out = run(
         "let ok = true\n"

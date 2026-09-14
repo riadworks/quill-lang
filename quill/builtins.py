@@ -121,6 +121,8 @@ def build_globals(script_args=None) -> Environment:
         _arity("has", args, line, 2)
         container, needle = args
         if isinstance(container, dict):
+            if not isinstance(needle, (str, int, float, bool)):
+                raise RuntimeErr(f"has() map keys must be a string, number, or bool, not {type_name(needle)}", line)
             return needle in container
         if isinstance(container, list):
             from quill.values import quill_equals
@@ -375,8 +377,10 @@ def build_globals(script_args=None) -> Environment:
 
         _arity("password_verify", args, line, 2)
         password, stored = args
-        if not isinstance(password, str) or not isinstance(stored, str):
-            raise RuntimeErr("password_verify() expects two strings", line)
+        if not isinstance(password, str):
+            raise RuntimeErr(f"password_verify() expects a string password, got {type_name(password)}", line)
+        if not isinstance(stored, str):
+            raise RuntimeErr(f"password_verify() expects a string hash, got {type_name(stored)}", line)
         try:
             algo, iterations_text, salt_hex, digest_hex = stored.split("$")
             if algo != "pbkdf2_sha256":
@@ -569,8 +573,10 @@ def build_globals(script_args=None) -> Environment:
 
     def _require_two_strings(name, args, line):
         pattern, text = args
-        if not isinstance(pattern, str) or not isinstance(text, str):
-            raise RuntimeErr(f"{name}() expects two strings", line)
+        if not isinstance(pattern, str):
+            raise RuntimeErr(f"{name}() expects a string pattern, got {type_name(pattern)}", line)
+        if not isinstance(text, str):
+            raise RuntimeErr(f"{name}() expects a string, got {type_name(text)}", line)
         return pattern, text
 
     def b_regex_match(args, line):
@@ -1001,8 +1007,10 @@ def build_globals(script_args=None) -> Environment:
 
         _arity("date_parse", args, line, 2)
         text, fmt = args
-        if not isinstance(text, str) or not isinstance(fmt, str):
-            raise RuntimeErr("date_parse() expects two strings", line)
+        if not isinstance(text, str):
+            raise RuntimeErr(f"date_parse() expects a string, got {type_name(text)}", line)
+        if not isinstance(fmt, str):
+            raise RuntimeErr(f"date_parse() expects a string format, got {type_name(fmt)}", line)
         try:
             return _time.mktime(_time.strptime(text, fmt))
         except ValueError as exc:
@@ -1095,8 +1103,10 @@ def build_globals(script_args=None) -> Environment:
 
         _arity("hmac_sha256", args, line, 2)
         key, message = args
-        if not isinstance(key, str) or not isinstance(message, str):
-            raise RuntimeErr("hmac_sha256() expects two strings", line)
+        if not isinstance(key, str):
+            raise RuntimeErr(f"hmac_sha256() expects a string key, got {type_name(key)}", line)
+        if not isinstance(message, str):
+            raise RuntimeErr(f"hmac_sha256() expects a string message, got {type_name(message)}", line)
         return _hmac.new(key.encode("utf-8"), message.encode("utf-8"), hashlib.sha256).hexdigest()
 
     def b_args(args, line):

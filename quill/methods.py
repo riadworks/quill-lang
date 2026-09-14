@@ -15,9 +15,21 @@ def _arity(name, args, line, lo, hi=None):
         raise RuntimeErr(f"{name}() expects {want} argument(s), got {len(args)}", line)
 
 
-def _require_num(name, value, line):
+def _require_number(name, value, line):
     if not isinstance(value, (int, float)) or isinstance(value, bool):
         raise RuntimeErr(f"{name}() expects a number, got {type_name(value)}", line)
+    return value
+
+
+def _require_str(name, value, line):
+    if not isinstance(value, str):
+        raise RuntimeErr(f"{name}() expects a string argument, got {type_name(value)}", line)
+    return value
+
+
+def _require_map_key(name, value, line):
+    if not isinstance(value, (str, int, float, bool)):
+        raise RuntimeErr(f"{name}() map keys must be a string, number, or bool, not {type_name(value)}", line)
     return value
 
 
@@ -56,56 +68,57 @@ def _s_trim_end(s, args, line):
 
 def _s_split(s, args, line):
     _arity("split", args, line, 0, 1)
-    sep = args[0] if args else None
+    sep = _require_str("split", args[0], line) if args else None
     return s.split(sep) if sep is not None else s.split()
 
 
 def _s_replace(s, args, line):
     _arity("replace", args, line, 2)
-    return s.replace(args[0], args[1])
+    return s.replace(_require_str("replace", args[0], line), _require_str("replace", args[1], line))
 
 
 def _s_contains(s, args, line):
     _arity("contains", args, line, 1)
-    return args[0] in s
+    return _require_str("contains", args[0], line) in s
 
 
 def _s_starts_with(s, args, line):
     _arity("starts_with", args, line, 1)
-    return s.startswith(args[0])
+    return s.startswith(_require_str("starts_with", args[0], line))
 
 
 def _s_ends_with(s, args, line):
     _arity("ends_with", args, line, 1)
-    return s.endswith(args[0])
+    return s.endswith(_require_str("ends_with", args[0], line))
 
 
 def _s_find(s, args, line):
     _arity("find", args, line, 1)
-    return s.find(args[0])
+    return s.find(_require_str("find", args[0], line))
 
 
 def _s_index(s, args, line):
     _arity("index", args, line, 1)
-    i = s.find(args[0])
+    needle = _require_str("index", args[0], line)
+    i = s.find(needle)
     if i == -1:
-        raise RuntimeErr(f"substring not found: {args[0]!r}", line)
+        raise RuntimeErr(f"substring not found: {needle!r}", line)
     return i
 
 
 def _s_count(s, args, line):
     _arity("count", args, line, 1)
-    return s.count(args[0])
+    return s.count(_require_str("count", args[0], line))
 
 
 def _s_repeat(s, args, line):
     _arity("repeat", args, line, 1)
-    return s * int(_require_num("repeat", args[0], line))
+    return s * int(_require_number("repeat", args[0], line))
 
 
 def _s_pad_start(s, args, line):
     _arity("pad_start", args, line, 1, 2)
-    width = int(_require_num("pad_start", args[0], line))
+    width = int(_require_number("pad_start", args[0], line))
     fill = args[1] if len(args) == 2 else " "
     if not isinstance(fill, str) or len(fill) != 1:
         raise RuntimeErr("pad_start() fill must be a single character", line)
@@ -114,7 +127,7 @@ def _s_pad_start(s, args, line):
 
 def _s_pad_end(s, args, line):
     _arity("pad_end", args, line, 1, 2)
-    width = int(_require_num("pad_end", args[0], line))
+    width = int(_require_number("pad_end", args[0], line))
     fill = args[1] if len(args) == 2 else " "
     if not isinstance(fill, str) or len(fill) != 1:
         raise RuntimeErr("pad_end() fill must be a single character", line)
@@ -213,7 +226,7 @@ def _s_to_camel_case(s, args, line):
 
 def _s_center(s, args, line):
     _arity("center", args, line, 1, 2)
-    width = int(_require_num("center", args[0], line))
+    width = int(_require_number("center", args[0], line))
     fill = args[1] if len(args) == 2 else " "
     if not isinstance(fill, str) or len(fill) != 1:
         raise RuntimeErr("center() fill must be a single character", line)
@@ -222,19 +235,19 @@ def _s_center(s, args, line):
 
 def _s_zfill(s, args, line):
     _arity("zfill", args, line, 1)
-    width = int(_require_num("zfill", args[0], line))
+    width = int(_require_number("zfill", args[0], line))
     return s.zfill(width)
 
 
 def _s_remove_prefix(s, args, line):
     _arity("remove_prefix", args, line, 1)
-    prefix = args[0]
+    prefix = _require_str("remove_prefix", args[0], line)
     return s[len(prefix):] if prefix and s.startswith(prefix) else s
 
 
 def _s_remove_suffix(s, args, line):
     _arity("remove_suffix", args, line, 1)
-    suffix = args[0]
+    suffix = _require_str("remove_suffix", args[0], line)
     return s[: -len(suffix)] if suffix and s.endswith(suffix) else s
 
 
@@ -322,7 +335,7 @@ def _l_remove(lst, args, line):
         if quill_equals(x, args[0]):
             lst.pop(i)
             return None
-    raise RuntimeErr("remove(): value not found in list", line)
+    raise RuntimeErr(f"value not found in list: {args[0]!r}", line)
 
 
 def _l_clear(lst, args, line):
@@ -765,22 +778,23 @@ def _m_items(m, args, line):
 
 def _m_has(m, args, line):
     _arity("has", args, line, 1)
-    return args[0] in m
+    return _require_map_key("has", args[0], line) in m
 
 
 def _m_get(m, args, line):
     _arity("get", args, line, 1, 2)
     default = args[1] if len(args) == 2 else None
-    return m.get(args[0], default)
+    return m.get(_require_map_key("get", args[0], line), default)
 
 
 def _m_pop(m, args, line):
     _arity("pop", args, line, 1, 2)
+    key = _require_map_key("pop", args[0], line)
     if len(args) == 2:
-        return m.pop(args[0], args[1])
-    if args[0] not in m:
-        raise RuntimeErr(f"pop(): key not found: {args[0]!r}", line)
-    return m.pop(args[0])
+        return m.pop(key, args[1])
+    if key not in m:
+        raise RuntimeErr(f"key not found: {key!r}", line)
+    return m.pop(key)
 
 
 def _m_clear(m, args, line):
@@ -805,7 +819,7 @@ def _m_update(m, args, line):
 
 def _m_setdefault(m, args, line):
     _arity("setdefault", args, line, 2)
-    return m.setdefault(args[0], args[1])
+    return m.setdefault(_require_map_key("setdefault", args[0], line), args[1])
 
 
 def _m_map_values(m, args, line):
