@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Classes and Inheritance in Quill</title>
+<meta name="description" content="Defining classes, init and self, fields, single inheritance, and super in Quill.">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#14161d">
+<link rel="canonical" href="https://quill-lang.example/learn/08-classes-and-inheritance.html">
+<link rel="stylesheet" href="learn.css">
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="../favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Classes and Inheritance in Quill">
+<meta property="og:description" content="Defining classes, init and self, single inheritance, and super.">
+<meta property="og:url" content="https://quill-lang.example/learn/08-classes-and-inheritance.html">
+<meta property="og:site_name" content="Quill">
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap">
+    <a class="brand" href="../index.html">
+      <span class="mark">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+          <path d="M20.5 3.5C14 3.5 6 9 3.5 20.5c9.5-1.5 15.5-7 17-13.5" stroke="#fff" stroke-width="1.9" stroke-linecap="round"/>
+          <path d="M3.5 20.5L9 15" stroke="#fff" stroke-width="1.9" stroke-linecap="round"/>
+        </svg>
+      </span>
+      Quill
+    </a>
+    <nav class="site" aria-label="Primary">
+      <a href="../index.html">Home</a>
+      <a href="index.html">Learn</a>
+      <a href="https://github.com/riadworks/quill-lang">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<div class="docs-body">
+  <nav class="docs-sidebar" aria-label="Course chapters">
+    <a class="overview-link" href="index.html">Course Overview</a>
+    <p class="course-label">Lessons</p>
+    <ol>
+      <li><a href="01-getting-started.html">Getting Started</a></li>
+      <li><a href="02-variables-and-types.html">Variables &amp; Types</a></li>
+      <li><a href="03-operators-and-expressions.html">Operators &amp; Expressions</a></li>
+      <li><a href="04-control-flow.html">Control Flow</a></li>
+      <li><a href="05-functions-and-closures.html">Functions &amp; Closures</a></li>
+      <li><a href="06-lists-and-maps.html">Lists &amp; Maps</a></li>
+      <li><a href="07-strings.html">Strings &amp; Interpolation</a></li>
+      <li><a href="08-classes-and-inheritance.html" aria-current="page">Classes &amp; Inheritance</a></li>
+      <li><a href="09-operator-overloading.html">Operator Overloading</a></li>
+      <li><a href="10-exceptions.html">Exceptions</a></li>
+      <li><a href="11-modules.html">Modules</a></li>
+      <li><a href="12-standard-library.html">Standard Library</a></li>
+      <li><a href="13-networking.html">Networking</a></li>
+      <li><a href="14-building-real-programs.html">Building Real Programs</a></li>
+      <li><a href="15-whats-next.html">What's Next</a></li>
+    </ol>
+    <a class="back-link" href="../index.html">&larr; Back to the Quill site</a>
+  </nav>
+
+  <main class="docs-content">
+    <div class="docs-wrap">
+      <p class="crumb">Lesson 8</p>
+      <h1>Classes &amp; Inheritance</h1>
+      <p class="lede">
+        Quill's classes are deliberately simple: no field declarations, no visibility
+        modifiers, no static members — just methods, an implicit <code>self</code>, and
+        single inheritance.
+      </p>
+
+      <h2>Defining a class</h2>
+      <pre class="code-block"><span class="kw">class</span> <span class="cls">Animal</span>:
+    <span class="kw">pull</span> <span class="fnname">init</span>(name):
+        self.name = name
+
+    <span class="kw">pull</span> <span class="fnname">speak</span>():
+        <span class="kw">return</span> f<span class="str">"{self.name} makes a sound"</span>
+
+<span class="kw">let</span> generic = Animal(<span class="str">"Creature"</span>)
+<span class="fnname">print</span>(generic.speak())    <span class="cmt"># Creature makes a sound</span></pre>
+      <p>
+        A class body may only contain method definitions (<code>pull name(...):</code>) —
+        there's no way to declare a data field directly in the class body. Fields simply
+        come into existence the first time you assign to <code>self.somefield</code>,
+        almost always inside <code>init</code>.
+      </p>
+      <p>
+        <code>init</code> is the constructor: calling <code>Animal("Creature")</code>
+        creates a new instance and immediately calls its <code>init</code> with those
+        arguments. If a class has no <code>init</code> at all, it can only be constructed
+        with zero arguments — passing any is a runtime error. <code>self</code> is never
+        declared as a parameter; it's bound automatically inside every method.
+      </p>
+
+      <h2>Single inheritance and <code>super</code></h2>
+      <pre class="code-block"><span class="kw">class</span> <span class="cls">Dog</span>(Animal):
+    <span class="kw">pull</span> <span class="fnname">init</span>(name, breed):
+        super.init(name)
+        self.breed = breed
+
+    <span class="kw">pull</span> <span class="fnname">speak</span>():
+        <span class="kw">return</span> f<span class="str">"{self.name} the {self.breed} barks"</span>
+
+<span class="kw">let</span> rex = Dog(<span class="str">"Rex"</span>, <span class="str">"Labrador"</span>)
+<span class="fnname">print</span>(rex.speak())     <span class="cmt"># Rex the Labrador barks</span>
+<span class="fnname">print</span>(type(rex))     <span class="cmt"># Dog</span></pre>
+      <p>
+        <code>class Dog(Animal):</code> is the only inheritance syntax — one optional
+        parent class in parentheses after the name. There's no multiple inheritance.
+        <code>super.method(...)</code> calls the parent class's version of a method, and it
+        resolves correctly no matter how deep the chain gets: each method remembers the
+        class it was <em>defined</em> in, so <code>super</code> inside it always means
+        "that class's parent," regardless of which subclass's instance actually called it.
+      </p>
+
+      <h2>Accessing fields and methods</h2>
+      <pre class="code-block">rex.name           <span class="cmt"># "Rex" - field access</span>
+rex.speak()        <span class="cmt"># calling a method - self is bound automatically</span>
+rex.nonexistent    <span class="cmt"># RuntimeErr: 'Dog' has no field or method 'nonexistent'</span></pre>
+      <p>
+        <code>type(instance)</code> returns the instance's class name as a string (that's
+        how <code>print(type(rex))</code> above printed <code>Dog</code>, not some generic
+        <code>"instance"</code> label).
+      </p>
+
+      <h2>Printing an instance</h2>
+      <p>
+        A class with no special handling prints as <code>&lt;ClassName instance&gt;</code>:
+      </p>
+      <pre class="code-block"><span class="fnname">print</span>(generic)   <span class="cmt"># &lt;Animal instance&gt;</span></pre>
+      <p>
+        That's the default. The next lesson shows how to make a class print something
+        actually useful.
+      </p>
+
+      <div class="quiz">
+        <h2>Check yourself</h2>
+        <ol>
+          <li>
+            Where does a field like <code>self.breed</code> get "declared"?
+            <details><summary></summary><div>
+              <p>
+                Nowhere, formally — there's no field-declaration syntax. It simply starts
+                existing the moment something assigns to it, typically
+                <code>self.breed = breed</code> inside <code>init</code>.
+              </p>
+            </div></details>
+          </li>
+          <li>
+            If <code>Cat</code> extends <code>Dog</code> extends <code>Animal</code>, and
+            <code>Dog.speak()</code> calls <code>super.speak()</code>, whose
+            <code>speak()</code> does that reach — even when called on a <code>Cat</code>
+            instance?
+            <details><summary></summary><div>
+              <p>
+                <code>Animal.speak()</code>. <code>super</code> inside a method always
+                resolves against the class that method was defined in (<code>Dog</code>),
+                not the runtime type of the instance it was called on (<code>Cat</code>) —
+                so it climbs exactly one level from <code>Dog</code>, to <code>Animal</code>,
+                regardless of how far down the actual instance's class is.
+              </p>
+            </div></details>
+          </li>
+        </ol>
+      </div>
+
+      <div class="lesson-pager">
+        <a href="07-strings.html">
+          <span class="pager-label">&larr; Previous</span>
+          <span class="pager-title">7. Strings &amp; Interpolation</span>
+        </a>
+        <a class="next" href="09-operator-overloading.html">
+          <span class="pager-label">Next</span>
+          <span class="pager-title">9. Operator Overloading &rarr;</span>
+        </a>
+      </div>
+    </div>
+  </main>
+</div>
+
+<footer class="site">
+  <div class="wrap">
+    <span>Quill &copy; 2026</span>
+    <span><a href="https://github.com/riadworks/quill-lang">Source on GitHub</a></span>
+  </div>
+</footer>
+
+</body>
+</html>

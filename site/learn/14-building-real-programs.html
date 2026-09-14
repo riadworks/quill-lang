@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Real Programs Built with Quill</title>
+<meta name="description" content="A guided tour of the six full applications shipped with the Quill project, and the real bugs building them found in the language itself.">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#14161d">
+<link rel="canonical" href="https://quill-lang.example/learn/14-building-real-programs.html">
+<link rel="stylesheet" href="learn.css">
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="../favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Real Programs Built with Quill">
+<meta property="og:description" content="A tour of the apps shipped with the project, and the real bugs building them found.">
+<meta property="og:url" content="https://quill-lang.example/learn/14-building-real-programs.html">
+<meta property="og:site_name" content="Quill">
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap">
+    <a class="brand" href="../index.html">
+      <span class="mark">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+          <path d="M20.5 3.5C14 3.5 6 9 3.5 20.5c9.5-1.5 15.5-7 17-13.5" stroke="#fff" stroke-width="1.9" stroke-linecap="round"/>
+          <path d="M3.5 20.5L9 15" stroke="#fff" stroke-width="1.9" stroke-linecap="round"/>
+        </svg>
+      </span>
+      Quill
+    </a>
+    <nav class="site" aria-label="Primary">
+      <a href="../index.html">Home</a>
+      <a href="index.html">Learn</a>
+      <a href="https://github.com/riadworks/quill-lang">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<div class="docs-body">
+  <nav class="docs-sidebar" aria-label="Course chapters">
+    <a class="overview-link" href="index.html">Course Overview</a>
+    <p class="course-label">Lessons</p>
+    <ol>
+      <li><a href="01-getting-started.html">Getting Started</a></li>
+      <li><a href="02-variables-and-types.html">Variables &amp; Types</a></li>
+      <li><a href="03-operators-and-expressions.html">Operators &amp; Expressions</a></li>
+      <li><a href="04-control-flow.html">Control Flow</a></li>
+      <li><a href="05-functions-and-closures.html">Functions &amp; Closures</a></li>
+      <li><a href="06-lists-and-maps.html">Lists &amp; Maps</a></li>
+      <li><a href="07-strings.html">Strings &amp; Interpolation</a></li>
+      <li><a href="08-classes-and-inheritance.html">Classes &amp; Inheritance</a></li>
+      <li><a href="09-operator-overloading.html">Operator Overloading</a></li>
+      <li><a href="10-exceptions.html">Exceptions</a></li>
+      <li><a href="11-modules.html">Modules</a></li>
+      <li><a href="12-standard-library.html">Standard Library</a></li>
+      <li><a href="13-networking.html">Networking</a></li>
+      <li><a href="14-building-real-programs.html" aria-current="page">Building Real Programs</a></li>
+      <li><a href="15-whats-next.html">What's Next</a></li>
+    </ol>
+    <a class="back-link" href="../index.html">&larr; Back to the Quill site</a>
+  </nav>
+
+  <main class="docs-content">
+    <div class="docs-wrap">
+      <p class="crumb">Lesson 14</p>
+      <h1>Building Real Programs</h1>
+      <p class="lede">
+        Six full, working applications ship with the project's own source, built
+        specifically to prove the language holds together on real programs rather than
+        isolated examples. Each one found — and fixed — a genuine bug or gap in Quill
+        itself. That's worth knowing both as a tour of what's possible and as a look at
+        how the language actually got built.
+      </p>
+
+      <h2><a href="https://github.com/riadworks/quill-lang/tree/master/apps/tasks">apps/tasks/</a> — a persistent CLI task manager</h2>
+      <p>
+        <code>cd apps/tasks &amp;&amp; quill main.ql</code>. An interactive menu-driven
+        program that proved classes, modules, file I/O, and exceptions actually hold
+        together — not six separate isolated examples, but one real program leaning on all
+        of them together. Testing it by piping a full scripted session into <code>quill</code>
+        (rather than only running scripts non-interactively) found a real bug: PowerShell
+        prepends a UTF-8 BOM to piped stdin, which landed on the first <code>input()</code>
+        call of a session and silently broke its first <code>==</code> comparison — fixed
+        in the <code>input()</code> builtin itself. Removing a task by number also needed
+        <code>list.pop(i)</code> with an index, which the language didn't have yet at the
+        time.
+      </p>
+
+      <h2><a href="https://github.com/riadworks/quill-lang/tree/master/apps/website">apps/website/</a> — the same task manager as a website</h2>
+      <p>
+        <code>cd apps/website &amp;&amp; quill site.ql</code>, then open
+        <code>http://127.0.0.1:8080/</code>. Quill had no networking at all before this
+        app — building it is what led directly to <code>serve(port, handler)</code>
+        (Lesson 13). It also exposed a real gap while building the page's embedded CSS:
+        f-strings had no way to write a literal <code>{</code> or <code>}</code>, so every
+        CSS rule was getting misread as interpolation — fixed with the <code>{{</code>/<code>}}</code>
+        escaping from Lesson 7. It has a <code>GET /api/tasks</code> JSON endpoint and a
+        <code>POST /api/wipe</code> route gated by a <code>sha256()</code>-hashed admin key
+        — comparing hashes, never plaintext.
+      </p>
+
+      <h2><a href="https://github.com/riadworks/quill-lang/tree/master/apps/guess_game">apps/guess_game/</a> and <a href="https://github.com/riadworks/quill-lang/tree/master/apps/password_gen">apps/password_gen/</a></h2>
+      <p>
+        Two short, self-contained CLI programs (<code>quill game.ql</code>,
+        <code>quill gen.ql</code>) exercising <code>random</code>/<code>random_int</code>/
+        <code>sha256</code> outside of a test harness. The guess game found its own real
+        design bug: piping a finite amount of input into a <code>while true:</code> loop
+        means <code>input()</code> eventually hits end-of-input and returns
+        <code>""</code> forever (Lesson 12), so a naive "keep asking until you get a
+        number" loop spins forever once stdin runs dry. Fixed at the app level with a
+        bad-guess counter that gives up after five unreadable answers in a row.
+      </p>
+
+      <h2><a href="https://github.com/riadworks/quill-lang/tree/master/apps/adventure">apps/adventure/</a> — a small text adventure</h2>
+      <p>
+        Three rooms, one locked door, one item that ends the game — leaning on classes,
+        maps as a room-to-exit graph, and comprehensions for filtering inventory and exits.
+        Writing it surfaced the single-quote-string trap from Lesson 7 for real:
+        <code>xs.join(', ')</code>, easy to type out of Python habit, fails even nested
+        inside an f-string's <code>{...}</code>.
+      </p>
+
+      <h2><a href="https://github.com/riadworks/quill-lang/tree/master/apps/shortener">apps/shortener/</a> — a URL shortener website</h2>
+      <p>
+        The same shape as <code>apps/website/</code>: <code>POST /shorten</code> generates
+        a random code and persists the mapping as JSON, <code>GET /&lt;code&gt;</code>
+        redirects, <code>GET /api/links</code> returns the raw map. It was proved out
+        against a live running instance rather than just read over on the page — a real
+        URL shortened, the redirect followed, and an unknown code confirmed to 404 instead
+        of crashing the server.
+      </p>
+
+      <h2>Two bugs in the language itself</h2>
+      <p>
+        Building these surfaced real bugs in the interpreter, not just gaps in the standard
+        library: a duplicated token-consumption bug in the class-body parser that broke
+        every method definition, found by simply running the first classes example; and
+        <code>raise</code>d exceptions not inheriting from the same base error class as
+        everything else, which meant an uncaught <code>raise</code> crashed the CLI with a
+        raw Python traceback instead of the clean <code>Error: ...</code> message you'd get
+        from any other error (Lesson 10). Both turned up from deliberately running the
+        exact scenario, not from assuming the happy-path tests already covered it — worth
+        remembering if you ever go looking through <a href="https://github.com/riadworks/quill-lang">the interpreter's own source</a>.
+      </p>
+
+      <div class="lesson-pager">
+        <a href="13-networking.html">
+          <span class="pager-label">&larr; Previous</span>
+          <span class="pager-title">13. Networking</span>
+        </a>
+        <a class="next" href="15-whats-next.html">
+          <span class="pager-label">Next</span>
+          <span class="pager-title">15. What's Next &rarr;</span>
+        </a>
+      </div>
+    </div>
+  </main>
+</div>
+
+<footer class="site">
+  <div class="wrap">
+    <span>Quill &copy; 2026</span>
+    <span><a href="https://github.com/riadworks/quill-lang">Source on GitHub</a></span>
+  </div>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Modules in Quill</title>
+<meta name="description" content="Splitting a Quill program across files with import ... as name, and how module namespaces actually work under the hood.">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#14161d">
+<link rel="canonical" href="https://quill-lang.example/learn/11-modules.html">
+<link rel="stylesheet" href="learn.css">
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="../favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Modules in Quill">
+<meta property="og:description" content="import ... as name, path resolution, and how module namespaces work under the hood.">
+<meta property="og:url" content="https://quill-lang.example/learn/11-modules.html">
+<meta property="og:site_name" content="Quill">
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap">
+    <a class="brand" href="../index.html">
+      <span class="mark">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+          <path d="M20.5 3.5C14 3.5 6 9 3.5 20.5c9.5-1.5 15.5-7 17-13.5" stroke="#fff" stroke-width="1.9" stroke-linecap="round"/>
+          <path d="M3.5 20.5L9 15" stroke="#fff" stroke-width="1.9" stroke-linecap="round"/>
+        </svg>
+      </span>
+      Quill
+    </a>
+    <nav class="site" aria-label="Primary">
+      <a href="../index.html">Home</a>
+      <a href="index.html">Learn</a>
+      <a href="https://github.com/riadworks/quill-lang">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<div class="docs-body">
+  <nav class="docs-sidebar" aria-label="Course chapters">
+    <a class="overview-link" href="index.html">Course Overview</a>
+    <p class="course-label">Lessons</p>
+    <ol>
+      <li><a href="01-getting-started.html">Getting Started</a></li>
+      <li><a href="02-variables-and-types.html">Variables &amp; Types</a></li>
+      <li><a href="03-operators-and-expressions.html">Operators &amp; Expressions</a></li>
+      <li><a href="04-control-flow.html">Control Flow</a></li>
+      <li><a href="05-functions-and-closures.html">Functions &amp; Closures</a></li>
+      <li><a href="06-lists-and-maps.html">Lists &amp; Maps</a></li>
+      <li><a href="07-strings.html">Strings &amp; Interpolation</a></li>
+      <li><a href="08-classes-and-inheritance.html">Classes &amp; Inheritance</a></li>
+      <li><a href="09-operator-overloading.html">Operator Overloading</a></li>
+      <li><a href="10-exceptions.html">Exceptions</a></li>
+      <li><a href="11-modules.html" aria-current="page">Modules</a></li>
+      <li><a href="12-standard-library.html">Standard Library</a></li>
+      <li><a href="13-networking.html">Networking</a></li>
+      <li><a href="14-building-real-programs.html">Building Real Programs</a></li>
+      <li><a href="15-whats-next.html">What's Next</a></li>
+    </ol>
+    <a class="back-link" href="../index.html">&larr; Back to the Quill site</a>
+  </nav>
+
+  <main class="docs-content">
+    <div class="docs-wrap">
+      <p class="crumb">Lesson 11</p>
+      <h1>Modules</h1>
+      <p class="lede">
+        One statement, <code>import "file.ql" as name</code>, is the entire module system.
+        No packages, no relative-dot imports, no <code>export</code> keyword to mark what's
+        public — everything a file defines at the top level becomes visible through its alias.
+      </p>
+
+      <h2>Splitting a program across files</h2>
+      <pre class="code-block"><span class="cmt"># mathutils.ql</span>
+<span class="kw">let</span> VERSION = <span class="str">"1.0"</span>
+
+<span class="kw">pull</span> <span class="fnname">square</span>(x):
+    <span class="kw">return</span> x * x
+
+<span class="kw">pull</span> <span class="fnname">cube</span>(x):
+    <span class="kw">return</span> x * x * x</pre>
+      <pre class="code-block"><span class="cmt"># main.ql</span>
+<span class="kw">import</span> <span class="str">"mathutils.ql"</span> <span class="kw">as</span> mu
+
+<span class="fnname">print</span>(mu.VERSION)
+<span class="fnname">print</span>(mu.square(5))
+<span class="fnname">print</span>(mu.cube(3))</pre>
+      <pre class="output">1.0
+25
+27</pre>
+      <p>
+        <code>as name</code> is mandatory — there's no bare <code>import "file.ql"</code>
+        that dumps names into the current scope. Everything the imported file declared at
+        its top level (variables and functions alike) hangs off the alias, accessed with
+        ordinary dot syntax.
+      </p>
+
+      <h2>Path resolution</h2>
+      <p>
+        The path in <code>import "..."</code> is always resolved relative to the
+        <em>importing file's own directory</em>, not the current working directory you
+        happened to run <code>quill</code> from. That means a module can safely
+        <code>import</code> its neighbors regardless of where the whole program gets
+        invoked from.
+      </p>
+
+      <h2>What an import actually does</h2>
+      <p>
+        It's worth knowing this isn't a lightweight name lookup — <code>import</code> runs
+        the target file as a completely independent program, from a fresh, empty global
+        environment that starts out with only the built-ins (nothing from the importing
+        file's own scope leaks in, and nothing the importing file has leaks out to it).
+        Once that finishes, the alias is bound to a snapshot of everything the module
+        declared at its top level.
+      </p>
+      <p>
+        Two things follow from that: first, a module has no visibility into the file that
+        imported it — it's fully sandboxed apart from the built-ins every Quill file gets
+        automatically. Second, since the snapshot is taken once, right when the
+        <code>import</code> statement runs, anything the module would compute lazily or
+        based on later state isn't an option — its whole top level runs immediately,
+        top to bottom, exactly once.
+      </p>
+
+      <div class="quiz">
+        <h2>Check yourself</h2>
+        <ol>
+          <li>
+            Is <code>import "utils.ql"</code> (no <code>as</code>) valid?
+            <details><summary></summary><div>
+              <p>No — <code>as name</code> is a required part of the syntax, not optional.</p>
+            </div></details>
+          </li>
+          <li>
+            If <code>a.ql</code> imports <code>b.ql</code>, can code inside <code>b.ql</code>
+            see a variable that <code>a.ql</code> declared before the <code>import</code> line?
+            <details><summary></summary><div>
+              <p>
+                No. <code>b.ql</code> runs against its own brand-new global environment,
+                completely independent of <code>a.ql</code>'s — the two files don't share
+                scope in either direction.
+              </p>
+            </div></details>
+          </li>
+        </ol>
+      </div>
+
+      <div class="lesson-pager">
+        <a href="10-exceptions.html">
+          <span class="pager-label">&larr; Previous</span>
+          <span class="pager-title">10. Exceptions</span>
+        </a>
+        <a class="next" href="12-standard-library.html">
+          <span class="pager-label">Next</span>
+          <span class="pager-title">12. Standard Library &rarr;</span>
+        </a>
+      </div>
+    </div>
+  </main>
+</div>
+
+<footer class="site">
+  <div class="wrap">
+    <span>Quill &copy; 2026</span>
+    <span><a href="https://github.com/riadworks/quill-lang">Source on GitHub</a></span>
+  </div>
+</footer>
+
+</body>
+</html>

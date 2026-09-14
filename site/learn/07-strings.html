@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quill Strings and Interpolation</title>
+<meta name="description" content="Plain strings vs. f-strings, escape sequences, every string method, and exactly how {expr} interpolation is parsed in Quill.">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#14161d">
+<link rel="canonical" href="https://quill-lang.example/learn/07-strings.html">
+<link rel="stylesheet" href="learn.css">
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="../favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Quill Strings and Interpolation">
+<meta property="og:description" content="Plain strings vs. f-strings, escapes, string methods, and how {expr} interpolation actually parses.">
+<meta property="og:url" content="https://quill-lang.example/learn/07-strings.html">
+<meta property="og:site_name" content="Quill">
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap">
+    <a class="brand" href="../index.html">
+      <span class="mark">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+          <path d="M20.5 3.5C14 3.5 6 9 3.5 20.5c9.5-1.5 15.5-7 17-13.5" stroke="#fff" stroke-width="1.9" stroke-linecap="round"/>
+          <path d="M3.5 20.5L9 15" stroke="#fff" stroke-width="1.9" stroke-linecap="round"/>
+        </svg>
+      </span>
+      Quill
+    </a>
+    <nav class="site" aria-label="Primary">
+      <a href="../index.html">Home</a>
+      <a href="index.html">Learn</a>
+      <a href="https://github.com/riadworks/quill-lang">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<div class="docs-body">
+  <nav class="docs-sidebar" aria-label="Course chapters">
+    <a class="overview-link" href="index.html">Course Overview</a>
+    <p class="course-label">Lessons</p>
+    <ol>
+      <li><a href="01-getting-started.html">Getting Started</a></li>
+      <li><a href="02-variables-and-types.html">Variables &amp; Types</a></li>
+      <li><a href="03-operators-and-expressions.html">Operators &amp; Expressions</a></li>
+      <li><a href="04-control-flow.html">Control Flow</a></li>
+      <li><a href="05-functions-and-closures.html">Functions &amp; Closures</a></li>
+      <li><a href="06-lists-and-maps.html">Lists &amp; Maps</a></li>
+      <li><a href="07-strings.html" aria-current="page">Strings &amp; Interpolation</a></li>
+      <li><a href="08-classes-and-inheritance.html">Classes &amp; Inheritance</a></li>
+      <li><a href="09-operator-overloading.html">Operator Overloading</a></li>
+      <li><a href="10-exceptions.html">Exceptions</a></li>
+      <li><a href="11-modules.html">Modules</a></li>
+      <li><a href="12-standard-library.html">Standard Library</a></li>
+      <li><a href="13-networking.html">Networking</a></li>
+      <li><a href="14-building-real-programs.html">Building Real Programs</a></li>
+      <li><a href="15-whats-next.html">What's Next</a></li>
+    </ol>
+    <a class="back-link" href="../index.html">&larr; Back to the Quill site</a>
+  </nav>
+
+  <main class="docs-content">
+    <div class="docs-wrap">
+      <p class="crumb">Lesson 7</p>
+      <h1>Strings &amp; Interpolation</h1>
+      <p class="lede">
+        Strings got a brief introduction back in Lesson 1. Here's the full picture,
+        including exactly how <code>{expr}</code> interpolation is parsed — which explains
+        some real sharp edges you'll otherwise hit by surprise.
+      </p>
+
+      <h2>Plain strings never interpolate</h2>
+      <pre class="code-block"><span class="kw">let</span> name = <span class="str">"Ada"</span>
+<span class="fnname">print</span>(<span class="str">"Hello, {name}!"</span>)     <span class="cmt"># prints the literal text: Hello, {name}!</span>
+<span class="fnname">print</span>(f<span class="str">"Hello, {name}!"</span>)    <span class="cmt"># prints: Hello, Ada!</span></pre>
+      <p>
+        The <code>f</code> prefix is what turns interpolation on, exactly matching Python's
+        f-string convention. Without it, <code>{</code> and <code>}</code> are just ordinary
+        characters — no escaping needed to use them literally in a plain string.
+      </p>
+
+      <h2>Escape sequences</h2>
+      <table class="ref">
+        <tr><th>Escape</th><th>Means</th></tr>
+        <tr><td><code>\n</code></td><td>Newline</td></tr>
+        <tr><td><code>\t</code></td><td>Tab</td></tr>
+        <tr><td><code>\"</code></td><td>A literal double quote</td></tr>
+        <tr><td><code>\\</code></td><td>A literal backslash</td></tr>
+      </table>
+      <p>Both plain and f-strings support all four.</p>
+
+      <div class="callout">
+        <span class="callout-label">Gotcha</span>
+        <p>
+          There is no single-quote string syntax at all — <code>'text'</code> is a lex
+          error, full stop, not an alternative way to write a string. This bites hardest
+          inside an f-string's <code>{...}</code>, where reaching for a single quote out of
+          Python habit (say, <code>xs.join(', ')</code>) fails even though it's nested
+          inside an outer <code>"..."</code> — the interpolated fragment gets re-tokenized
+          on its own, and it hits the same rule. Always use <code>"..."</code>, even nested:
+          <code>f"{xs.join(", ")}"</code> — see below for why that's not ambiguous.
+        </p>
+      </div>
+
+      <h3>Literal braces in an f-string</h3>
+      <p>
+        Since <code>{</code> starts interpolation in an f-string, writing one literally
+        needs doubling — <code>{{</code> and <code>}}</code>, the same convention Python
+        uses:
+      </p>
+      <pre class="code-block"><span class="fnname">print</span>(f<span class="str">"CSS rule: {{ color: red }}"</span>)
+<span class="cmt"># CSS rule: { color: red }</span></pre>
+
+      <h2>String methods</h2>
+      <table class="ref">
+        <tr><th>Method</th><th>Does</th></tr>
+        <tr><td><code>.upper()</code> / <code>.lower()</code></td><td>Case conversion.</td></tr>
+        <tr><td><code>.trim()</code></td><td>Strips leading/trailing whitespace.</td></tr>
+        <tr><td><code>.split(sep)</code></td><td>Splits into a list. With no argument, splits on any whitespace.</td></tr>
+        <tr><td><code>.replace(a, b)</code></td><td>Replaces every occurrence of <code>a</code> with <code>b</code>.</td></tr>
+        <tr><td><code>.contains(s)</code></td><td>Whether <code>s</code> is a substring.</td></tr>
+        <tr><td><code>.starts_with(s)</code> / <code>.ends_with(s)</code></td><td>Prefix/suffix check.</td></tr>
+        <tr><td><code>.find(s)</code></td><td>Index of the first occurrence of <code>s</code>, or <code>-1</code>.</td></tr>
+        <tr><td><code>.repeat(n)</code></td><td>The string repeated <code>n</code> times.</td></tr>
+        <tr><td><code>.title()</code></td><td>Title Cases Every Word.</td></tr>
+      </table>
+      <pre class="code-block"><span class="kw">let</span> s = <span class="str">"  Hello World  "</span>
+<span class="fnname">print</span>(s.trim().upper())        <span class="cmt"># "HELLO WORLD"</span>
+<span class="fnname">print</span>(s.trim().split(<span class="str">" "</span>))     <span class="cmt"># ["Hello", "World"]</span>
+<span class="fnname">print</span>(<span class="str">"abc"</span>.repeat(3))          <span class="cmt"># "abcabcabc"</span></pre>
+      <p>
+        Strings are indexed like lists (<code>s[0]</code>, negative indexes from the end)
+        but are <strong>immutable</strong> — there's no slice syntax either, so reach for
+        <code>slice(s, start, end)</code> when you need a substring range.
+      </p>
+
+      <h2>How <code>{expr}</code> is actually parsed</h2>
+      <p>
+        It's worth knowing the mechanism, because it explains behavior you'd otherwise
+        find surprising. When the lexer hits an unescaped <code>{</code> inside an
+        f-string, it doesn't try to understand the expression at all — it just counts
+        brace depth character by character until the matching <code>}</code>, completely
+        ignoring quote characters along the way. That raw chunk of text is saved, and
+        later handed to the lexer and parser <em>again</em>, on its own, as if it were a
+        standalone expression.
+      </p>
+      <p>
+        That's exactly why this works, even though it looks like it shouldn't — a
+        double-quoted string nested inside an interpolation, inside an <em>outer</em>
+        double-quoted string:
+      </p>
+      <pre class="code-block"><span class="kw">let</span> person = {<span class="str">"name"</span>: <span class="str">"Ada"</span>, <span class="str">"age"</span>: 36}
+<span class="fnname">print</span>(f<span class="str">"{person["name"]} is {person["age"]}"</span>)
+<span class="cmt"># Ada is 36</span></pre>
+      <p>
+        The outer string-scanner never sees those inner quotes as "its" closing quote,
+        because while it's inside <code>{...}</code> it's just counting braces, not
+        watching for <code>"</code> at all. It's also why <em>any</em> expression works
+        inside the braces — a call, an index, arithmetic — not just a bare variable name.
+      </p>
+
+      <div class="quiz">
+        <h2>Check yourself</h2>
+        <ol>
+          <li>
+            What does <code>print("Total: {n}")</code> print, given <code>let n = 5</code>?
+            <details><summary></summary><div>
+              <p>The literal text <code>Total: {n}</code> — no <code>f</code> prefix means no interpolation happens.</p>
+            </div></details>
+          </li>
+          <li>
+            Why does <code>f"{xs.join(', ')}"</code> fail?
+            <details><summary></summary><div>
+              <p>
+                Quill has no single-quote string syntax anywhere, including inside an
+                interpolated <code>{...}</code> fragment (which gets re-tokenized on its
+                own). Use <code>xs.join(", ")</code> with double quotes instead.
+              </p>
+            </div></details>
+          </li>
+        </ol>
+      </div>
+
+      <div class="lesson-pager">
+        <a href="06-lists-and-maps.html">
+          <span class="pager-label">&larr; Previous</span>
+          <span class="pager-title">6. Lists &amp; Maps</span>
+        </a>
+        <a class="next" href="08-classes-and-inheritance.html">
+          <span class="pager-label">Next</span>
+          <span class="pager-title">8. Classes &amp; Inheritance &rarr;</span>
+        </a>
+      </div>
+    </div>
+  </main>
+</div>
+
+<footer class="site">
+  <div class="wrap">
+    <span>Quill &copy; 2026</span>
+    <span><a href="https://github.com/riadworks/quill-lang">Source on GitHub</a></span>
+  </div>
+</footer>
+
+</body>
+</html>

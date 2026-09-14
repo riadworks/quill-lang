@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>What's Next After Learning Quill</title>
+<meta name="description" content="What Quill deliberately leaves out and why, and where to go after finishing this course.">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#14161d">
+<link rel="canonical" href="https://quill-lang.example/learn/15-whats-next.html">
+<link rel="stylesheet" href="learn.css">
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="../favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
+<meta property="og:type" content="article">
+<meta property="og:title" content="What's Next After Learning Quill">
+<meta property="og:description" content="What Quill deliberately leaves out and why, and where to go from here.">
+<meta property="og:url" content="https://quill-lang.example/learn/15-whats-next.html">
+<meta property="og:site_name" content="Quill">
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap">
+    <a class="brand" href="../index.html">
+      <span class="mark">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+          <path d="M20.5 3.5C14 3.5 6 9 3.5 20.5c9.5-1.5 15.5-7 17-13.5" stroke="#fff" stroke-width="1.9" stroke-linecap="round"/>
+          <path d="M3.5 20.5L9 15" stroke="#fff" stroke-width="1.9" stroke-linecap="round"/>
+        </svg>
+      </span>
+      Quill
+    </a>
+    <nav class="site" aria-label="Primary">
+      <a href="../index.html">Home</a>
+      <a href="index.html">Learn</a>
+      <a href="https://github.com/riadworks/quill-lang">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<div class="docs-body">
+  <nav class="docs-sidebar" aria-label="Course chapters">
+    <a class="overview-link" href="index.html">Course Overview</a>
+    <p class="course-label">Lessons</p>
+    <ol>
+      <li><a href="01-getting-started.html">Getting Started</a></li>
+      <li><a href="02-variables-and-types.html">Variables &amp; Types</a></li>
+      <li><a href="03-operators-and-expressions.html">Operators &amp; Expressions</a></li>
+      <li><a href="04-control-flow.html">Control Flow</a></li>
+      <li><a href="05-functions-and-closures.html">Functions &amp; Closures</a></li>
+      <li><a href="06-lists-and-maps.html">Lists &amp; Maps</a></li>
+      <li><a href="07-strings.html">Strings &amp; Interpolation</a></li>
+      <li><a href="08-classes-and-inheritance.html">Classes &amp; Inheritance</a></li>
+      <li><a href="09-operator-overloading.html">Operator Overloading</a></li>
+      <li><a href="10-exceptions.html">Exceptions</a></li>
+      <li><a href="11-modules.html">Modules</a></li>
+      <li><a href="12-standard-library.html">Standard Library</a></li>
+      <li><a href="13-networking.html">Networking</a></li>
+      <li><a href="14-building-real-programs.html">Building Real Programs</a></li>
+      <li><a href="15-whats-next.html" aria-current="page">What's Next</a></li>
+    </ol>
+    <a class="back-link" href="../index.html">&larr; Back to the Quill site</a>
+  </nav>
+
+  <main class="docs-content">
+    <div class="docs-wrap">
+      <p class="crumb">Lesson 15</p>
+      <h1>What's Next</h1>
+      <p class="lede">
+        That's the whole language — every keyword, every operator, every built-in
+        function. This last lesson covers what's deliberately missing, and where to go
+        from here.
+      </p>
+
+      <h2>What's deliberately not here</h2>
+      <table class="ref">
+        <tr><th>Missing</th><th>What that means in practice</th></tr>
+        <tr><td>Multiple inheritance</td><td><code>class C(A, B):</code> isn't valid — one optional parent only.</td></tr>
+        <tr><td>Reflected operators</td><td>No <code>__radd__</code>-style fallback — an overload only fires with the instance on the left (Lesson 9).</td></tr>
+        <tr><td>A package manager</td><td>No third-party libraries to install — only what's in the standard library (Lesson 12) and your own <code>.ql</code> files (Lesson 11).</td></tr>
+        <tr><td>Async/concurrency</td><td>Everything runs on one thread, top to bottom — <code>serve()</code> included.</td></tr>
+        <tr><td>Static typing</td><td>No type annotations or compile-time type checking — every check happens at runtime (Lesson 2).</td></tr>
+      </table>
+      <p>
+        None of this is accidental — it's the project keeping its surface area small enough
+        to stay solid and well-tested, rather than spreading thin over more features. All
+        five are reasonable directions the language could grow in later.
+      </p>
+
+      <h2>There's no PyPI package yet</h2>
+      <p>
+        Quill installs from source only, the same way it did back in
+        <a href="01-getting-started.html">Lesson 1</a>:
+      </p>
+      <pre class="shell">git clone https://github.com/riadworks/quill-lang.git
+cd quill-lang
+python -m venv .venv
+.venv\Scripts\pip install -e .</pre>
+
+      <h2>Where to go from here</h2>
+      <ul>
+        <li>
+          <strong>Build something of your own.</strong> A CLI tool that reads/writes JSON
+          and handles its own errors, a tiny website with <code>serve()</code>, or a small
+          class hierarchy that leans on inheritance and operator overloading are all a good
+          size to actually finish.
+        </li>
+        <li>
+          <strong>Read the shipped apps as real code</strong>, not just the lesson
+          descriptions — <a href="14-building-real-programs.html">Lesson 14</a> links
+          straight to each one on GitHub.
+        </li>
+        <li>
+          <strong>Read the interpreter itself.</strong> It's genuinely small — about 2,500
+          lines across a dozen files (lexer, parser, AST, interpreter, and the built-in
+          function tables) — small enough to read start to finish in an afternoon and come
+          away actually understanding how a tree-walking interpreter works, not just how to
+          use one.
+        </li>
+        <li>
+          <strong><a href="https://github.com/riadworks/quill-lang">Open the repo</a></strong>
+          — file an issue, send a pull request, or just poke around.
+        </li>
+      </ul>
+
+      <div class="lesson-pager">
+        <a href="14-building-real-programs.html">
+          <span class="pager-label">&larr; Previous</span>
+          <span class="pager-title">14. Building Real Programs</span>
+        </a>
+        <a class="next" href="index.html">
+          <span class="pager-label">Course finished</span>
+          <span class="pager-title">Back to Overview &rarr;</span>
+        </a>
+      </div>
+    </div>
+  </main>
+</div>
+
+<footer class="site">
+  <div class="wrap">
+    <span>Quill &copy; 2026</span>
+    <span><a href="https://github.com/riadworks/quill-lang">Source on GitHub</a></span>
+  </div>
+</footer>
+
+</body>
+</html>

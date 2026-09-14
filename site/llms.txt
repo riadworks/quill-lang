@@ -37,3 +37,7 @@ Multiple inheritance, reflected operators (`__radd__`-style), a package manager,
 ## Real programs built with it
 
 A persistent CLI task manager, the same task manager as a website with a JSON API, a URL shortener, a text adventure, a password generator, and a number-guessing game - all shipped with the project's source.
+
+## Learn Quill
+
+A complete, from-scratch, 15-lesson course covering every part of the language: https://quill-lang.example/learn/ - every example on every page has been run through the real interpreter.

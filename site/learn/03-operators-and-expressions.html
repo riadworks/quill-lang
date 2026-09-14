@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quill Operators and Expressions</title>
+<meta name="description" content="Arithmetic, comparison, and logical operators in Quill, precedence and associativity, the ternary expression, and real gotchas around unary minus and chained comparisons.">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#14161d">
+<link rel="canonical" href="https://quill-lang.example/learn/03-operators-and-expressions.html">
+<link rel="stylesheet" href="learn.css">
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="../favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Quill Operators and Expressions">
+<meta property="og:description" content="Arithmetic, comparison, and logical operators, precedence and associativity, and real gotchas around unary minus and chained comparisons.">
+<meta property="og:url" content="https://quill-lang.example/learn/03-operators-and-expressions.html">
+<meta property="og:site_name" content="Quill">
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap">
+    <a class="brand" href="../index.html">
+      <span class="mark">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+          <path d="M20.5 3.5C14 3.5 6 9 3.5 20.5c9.5-1.5 15.5-7 17-13.5" stroke="#fff" stroke-width="1.9" stroke-linecap="round"/>
+          <path d="M3.5 20.5L9 15" stroke="#fff" stroke-width="1.9" stroke-linecap="round"/>
+        </svg>
+      </span>
+      Quill
+    </a>
+    <nav class="site" aria-label="Primary">
+      <a href="../index.html">Home</a>
+      <a href="index.html">Learn</a>
+      <a href="https://github.com/riadworks/quill-lang">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<div class="docs-body">
+  <nav class="docs-sidebar" aria-label="Course chapters">
+    <a class="overview-link" href="index.html">Course Overview</a>
+    <p class="course-label">Lessons</p>
+    <ol>
+      <li><a href="01-getting-started.html">Getting Started</a></li>
+      <li><a href="02-variables-and-types.html">Variables &amp; Types</a></li>
+      <li><a href="03-operators-and-expressions.html" aria-current="page">Operators &amp; Expressions</a></li>
+      <li><a href="04-control-flow.html">Control Flow</a></li>
+      <li><a href="05-functions-and-closures.html">Functions &amp; Closures</a></li>
+      <li><a href="06-lists-and-maps.html">Lists &amp; Maps</a></li>
+      <li><a href="07-strings.html">Strings &amp; Interpolation</a></li>
+      <li><a href="08-classes-and-inheritance.html">Classes &amp; Inheritance</a></li>
+      <li><a href="09-operator-overloading.html">Operator Overloading</a></li>
+      <li><a href="10-exceptions.html">Exceptions</a></li>
+      <li><a href="11-modules.html">Modules</a></li>
+      <li><a href="12-standard-library.html">Standard Library</a></li>
+      <li><a href="13-networking.html">Networking</a></li>
+      <li><a href="14-building-real-programs.html">Building Real Programs</a></li>
+      <li><a href="15-whats-next.html">What's Next</a></li>
+    </ol>
+    <a class="back-link" href="../index.html">&larr; Back to the Quill site</a>
+  </nav>
+
+  <main class="docs-content">
+    <div class="docs-wrap">
+      <p class="crumb">Lesson 3</p>
+      <h1>Operators &amp; Expressions</h1>
+      <p class="lede">
+        Most of this will look familiar from any C-family or Python-family language. The
+        parts worth slowing down for are precedence, and two places where Quill quietly
+        does <em>not</em> match Python.
+      </p>
+
+      <h2>Arithmetic</h2>
+      <table class="ref">
+        <tr><th>Operator</th><th>Meaning</th><th>Example</th></tr>
+        <tr><td><code>+</code></td><td>Addition (also string and list concatenation)</td><td><code>2 + 3</code> &rarr; <code>5</code></td></tr>
+        <tr><td><code>-</code></td><td>Subtraction</td><td><code>5 - 3</code> &rarr; <code>2</code></td></tr>
+        <tr><td><code>*</code></td><td>Multiplication</td><td><code>4 * 2</code> &rarr; <code>8</code></td></tr>
+        <tr><td><code>/</code></td><td>Division — always returns a number with a fractional part when needed</td><td><code>7 / 2</code> &rarr; <code>3.5</code></td></tr>
+        <tr><td><code>//</code></td><td>Floor division</td><td><code>7 // 2</code> &rarr; <code>3</code>, <code>5 // -2</code> &rarr; <code>-3</code></td></tr>
+        <tr><td><code>%</code></td><td>Modulo — sign follows the divisor, like Python</td><td><code>-5 % 3</code> &rarr; <code>1</code></td></tr>
+        <tr><td><code>**</code></td><td>Exponentiation, right-associative</td><td><code>2 ** 3 ** 2</code> &rarr; <code>512</code> (that's <code>2 ** (3 ** 2)</code>)</td></tr>
+      </table>
+      <p>
+        Dividing or floor-dividing or taking the modulo of anything by zero is a clear
+        runtime error ("division by zero"), not <code>inf</code> or a crash with a Python
+        traceback.
+      </p>
+
+      <div class="callout">
+        <span class="callout-label">Gotcha</span>
+        <p>
+          Unary minus binds <strong>tighter</strong> than <code>**</code> in Quill — the
+          opposite of Python. <code>-2 ** 2</code> is <code>4</code> here (it parses as
+          <code>(-2) ** 2</code>), where Python's <code>-2 ** 2</code> is <code>-4</code>
+          (Python parses it as <code>-(2 ** 2)</code>). If you want the Python reading,
+          parenthesize it yourself: <code>-(2 ** 2)</code>.
+        </p>
+      </div>
+
+      <h2>Comparison</h2>
+      <table class="ref">
+        <tr><th>Operator</th><th>Meaning</th></tr>
+        <tr><td><code>==</code> / <code>!=</code></td><td>Equal / not equal. Works on any two values — see below.</td></tr>
+        <tr><td><code>&lt;</code> <code>&gt;</code> <code>&lt;=</code> <code>&gt;=</code></td><td>Ordering. Numbers only.</td></tr>
+      </table>
+      <p>
+        <code>==</code> and <code>!=</code> compare structurally: two lists are equal if
+        they're the same length with equal elements in order, two maps are equal if they
+        have the same keys mapping to equal values, and numbers compare by value regardless
+        of int/float. <code>&lt;</code>/<code>&gt;</code>/<code>&lt;=</code>/<code>&gt;=</code>,
+        on the other hand, only work between two numbers — there's no built-in ordering for
+        strings, so <code>"apple" &lt; "banana"</code> is a runtime error, not alphabetical
+        comparison. (A class can define its own via <code>__lt__</code> and friends — see
+        <a href="09-operator-overloading.html">Lesson 9</a>.)
+      </p>
+
+      <div class="callout">
+        <span class="callout-label">Gotcha</span>
+        <p>
+          Quill has no chained comparisons. <code>1 &lt; 2 &lt; 3</code> doesn't mean "is 2
+          between 1 and 3" the way it does in Python — it's parsed left to right as
+          <code>(1 &lt; 2) &lt; 3</code>, which evaluates the first comparison to
+          <code>true</code> and then tries to compare that boolean against a number with
+          <code>&lt;</code>, which is a runtime error ("cannot use '&lt;' on bool and
+          number"). Write it out with <code>and</code> instead:
+          <code>1 &lt; 2 and 2 &lt; 3</code>.
+        </p>
+      </div>
+
+      <h2>Logical operators</h2>
+      <p>
+        <code>and</code>, <code>or</code>, and <code>not</code> are words, not symbols
+        (there's no <code>&amp;&amp;</code>/<code>||</code>/<code>!</code>). <code>and</code>
+        and <code>or</code> short-circuit and hand back one of their actual operands rather
+        than always forcing a boolean — the same useful idiom Python uses for defaults:
+      </p>
+      <pre class="code-block"><span class="fnname">print</span>(<span class="str">""</span> or <span class="str">"default"</span>)     <span class="cmt"># "default" - left side is falsy, so 'or' returns the right side</span>
+<span class="fnname">print</span>(<span class="kw">nil</span> and 5)         <span class="cmt"># nil       - left side is falsy, so 'and' short-circuits and returns it</span>
+<span class="fnname">print</span>(<span class="kw">not</span> <span class="kw">false</span>)          <span class="cmt"># true      - 'not' always returns a real boolean</span></pre>
+      <p>
+        Precedence from loosest to tightest binding: <code>or</code>, then <code>and</code>,
+        then <code>not</code>, then the comparisons, then <code>+</code>/<code>-</code>, then
+        <code>*</code>/<code>/</code>/<code>//</code>/<code>%</code>, then unary
+        <code>-</code>, then <code>**</code>. In practice this means
+        <code>not a == b</code> reads as <code>not (a == b)</code>, and
+        <code>a and b or c</code> reads as <code>(a and b) or c</code> — parenthesize
+        anything you're not sure of rather than relying on memorizing the table.
+      </p>
+
+      <h2>Ternary expressions</h2>
+      <p>
+        A single-expression conditional, in the same <code>X if COND else Y</code> order
+        Python uses:
+      </p>
+      <pre class="code-block"><span class="kw">let</span> label = <span class="str">"big"</span> <span class="kw">if</span> x > 5 <span class="kw">else</span> <span class="str">"small"</span></pre>
+      <p>
+        It's the loosest-binding expression form of all, and it chains by nesting in the
+        <code>else</code> branch, so this reads the way you'd expect:
+      </p>
+      <pre class="code-block"><span class="kw">let</span> grade = <span class="str">"A"</span> <span class="kw">if</span> score >= 90 <span class="kw">else</span> <span class="str">"B"</span> <span class="kw">if</span> score >= 80 <span class="kw">else</span> <span class="str">"C"</span></pre>
+
+      <h2>Augmented assignment</h2>
+      <p>
+        <code>+=</code>, <code>-=</code>, <code>*=</code>, and <code>/=</code> exist and do
+        the obvious thing. Notably, <strong>there is no <code>//=</code>, <code>%=</code>, or
+        <code>**=</code></strong> — those simply aren't tokens the lexer recognizes, so
+        write them out in full: <code>x = x // 2</code> instead of <code>x //= 2</code>.
+      </p>
+      <pre class="code-block"><span class="kw">let</span> counter = 0
+counter += 5
+counter *= 2
+<span class="fnname">print</span>(counter)   <span class="cmt"># 10</span></pre>
+
+      <div class="quiz">
+        <h2>Check yourself</h2>
+        <ol>
+          <li>
+            What does <code>print(-2 ** 2)</code> print in Quill, and how is that different
+            from Python?
+            <details><summary></summary><div>
+              <p>
+                It prints <code>4</code>. In Quill, unary minus binds tighter than
+                <code>**</code>, so this is <code>(-2) ** 2</code>. In Python the same
+                expression is <code>-4</code>, because Python's unary minus binds looser
+                than <code>**</code>.
+              </p>
+            </div></details>
+          </li>
+          <li>
+            Why does <code>"a" &lt; "b"</code> raise an error in Quill?
+            <details><summary></summary><div>
+              <p>
+                Because <code>&lt;</code>/<code>&gt;</code>/<code>&lt;=</code>/<code>&gt;=</code>
+                only work on numbers in Quill — there's no built-in string ordering. Only
+                <code>==</code> and <code>!=</code> work across all types.
+              </p>
+            </div></details>
+          </li>
+        </ol>
+      </div>
+
+      <div class="lesson-pager">
+        <a href="02-variables-and-types.html">
+          <span class="pager-label">&larr; Previous</span>
+          <span class="pager-title">2. Variables &amp; Types</span>
+        </a>
+        <a class="next" href="04-control-flow.html">
+          <span class="pager-label">Next</span>
+          <span class="pager-title">4. Control Flow &rarr;</span>
+        </a>
+      </div>
+    </div>
+  </main>
+</div>
+
+<footer class="site">
+  <div class="wrap">
+    <span>Quill &copy; 2026</span>
+    <span><a href="https://github.com/riadworks/quill-lang">Source on GitHub</a></span>
+  </div>
+</footer>
+
+</body>
+</html>
