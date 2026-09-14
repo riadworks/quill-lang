@@ -111,6 +111,7 @@ class Index:
 @dataclass
 class FnExpr:
     params: list
+    defaults: list  # parallel to params: None for a required param, an expr node for a default
     body: list
     name: Optional[str] = None  # set for named `fn foo(...):` declarations, else None
     line: int = 0

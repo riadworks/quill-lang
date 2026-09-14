@@ -82,11 +82,52 @@
       <p>
         <code>return</code> with no expression (or falling off the end of the function
         with no <code>return</code> at all) gives back <code>nil</code>. There are no
-        default parameter values and no variadic (<code>*args</code>-style) parameters —
-        every call must supply exactly as many arguments as the function declares:
+        variadic (<code>*args</code>-style) parameters — every call needs at least as
+        many arguments as the function has required parameters (more on "required" in a
+        moment):
       </p>
       <pre class="code-block">add(1)</pre>
       <pre class="output">Error: 'add' expects 2 argument(s), got 1</pre>
+
+      <h2>Default parameter values</h2>
+      <p>
+        A parameter can have a default, written the same way Python writes one:
+      </p>
+      <pre class="code-block"><span class="kw">pull</span> <span class="fnname">greet</span>(name, greeting=<span class="str">"Hello"</span>):
+    <span class="kw">return</span> f<span class="str">"{greeting}, {name}!"</span>
+
+<span class="fnname">print</span>(greet(<span class="str">"Ada"</span>))         <span class="cmt"># Hello, Ada!</span>
+<span class="fnname">print</span>(greet(<span class="str">"Ada"</span>, <span class="str">"Hi"</span>))    <span class="cmt"># Hi, Ada!</span></pre>
+      <p>
+        Once one parameter has a default, every parameter after it needs one too — the
+        same rule Python enforces, and for the same reason: arguments fill in from the
+        left, so a required parameter stranded after a defaulted one would have no way
+        to receive a value. <code>pull f(a=1, b):</code> is a parse error, not a runtime
+        surprise.
+      </p>
+      <p>
+        One real difference from Python, and a deliberate one: a default expression is
+        evaluated fresh on every call, in that call's own scope — not once, when the
+        function is defined. That means a later default can refer to an earlier
+        parameter:
+      </p>
+      <pre class="code-block"><span class="kw">pull</span> <span class="fnname">scale</span>(x, factor=2, offset=x):
+    <span class="kw">return</span> x * factor + offset
+
+<span class="fnname">print</span>(scale(5))        <span class="cmt"># 5*2+5  = 15  - offset defaults to x, which is 5 here</span>
+<span class="fnname">print</span>(scale(5, 3))     <span class="cmt"># 5*3+5  = 20</span>
+<span class="fnname">print</span>(scale(5, 3, 1)) <span class="cmt"># 5*3+1  = 16</span></pre>
+      <p>
+        It also means Quill sidesteps Python's single most notorious gotcha —
+        a mutable default argument (<code>def f(items=[]):</code> in Python) that gets
+        created once and then silently shared and mutated across every call that doesn't
+        pass its own. In Quill, <code>pull f(items=[]):</code> gets a fresh empty list
+        every single call, because the default is genuinely re-evaluated each time.
+      </p>
+      <p>
+        With defaults in the mix, the arity error reports a range instead of one number:
+      </p>
+      <pre class="output">Error: 'greet' expects 1-2 argument(s), got 0</pre>
 
       <h2>Functions are values</h2>
       <p>
@@ -170,6 +211,18 @@
                 body fresh, creating a brand-new <code>count</code> variable in a brand-new
                 scope each time — the two returned <code>increment</code> functions close
                 over two different scopes.
+              </p>
+            </div></details>
+          </li>
+          <li>
+            Given <code>pull f(items=[]):</code>, does calling <code>f()</code> twice ever
+            give the second call a list the first call already put things into?
+            <details><summary></summary><div>
+              <p>
+                No. Unlike Python's version of this exact function signature (a famous
+                gotcha there), Quill evaluates a default expression fresh in the call's own
+                scope on every call — so each call to <code>f()</code> gets its own brand
+                new empty list, never one shared with a previous call.
               </p>
             </div></details>
           </li>

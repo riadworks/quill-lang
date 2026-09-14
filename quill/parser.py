@@ -114,21 +114,41 @@ class Parser:
         return A.LetStmt(names, expr, line=tok.line)
 
     def parse_params(self):
+        """Returns (params, defaults): parallel lists, defaults[i] is None for a
+        required parameter or an expr node for one written as `name = expr`.
+        Once one parameter has a default, every parameter after it must too -
+        same rule Python enforces, for the same reason: with defaults filled in
+        by position from the right, a required parameter after a defaulted one
+        would have no way to be filled unless the caller also skips the default,
+        which there's no syntax for."""
         params = []
+        defaults = []
         self.expect(T.LPAREN, "expected '(' before parameter list")
         if not self.check(T.RPAREN):
-            params.append(self.expect(T.NAME, "expected a parameter name").value)
+            self._parse_param(params, defaults)
             while self.match(T.COMMA):
-                params.append(self.expect(T.NAME, "expected a parameter name").value)
+                self._parse_param(params, defaults)
         self.expect(T.RPAREN, "expected ')' after parameter list")
-        return params
+        return params, defaults
+
+    def _parse_param(self, params, defaults):
+        tok = self.expect(T.NAME, "expected a parameter name")
+        if self.match(T.EQ):
+            defaults.append(self.parse_expr())
+        else:
+            if any(d is not None for d in defaults):
+                raise ParseError(
+                    f"parameter '{tok.value}' without a default value follows a parameter that has one", tok.line
+                )
+            defaults.append(None)
+        params.append(tok.value)
 
     def parse_fn_decl(self):
         tok = self.advance()
         name = self.expect(T.NAME, "expected a function name").value
-        params = self.parse_params()
+        params, defaults = self.parse_params()
         body = self.parse_block()
-        fn = A.FnExpr(params, body, name=name, line=tok.line)
+        fn = A.FnExpr(params, defaults, body, name=name, line=tok.line)
         return A.LetStmt([name], fn, line=tok.line)
 
     def parse_if(self):
@@ -217,9 +237,9 @@ class Parser:
         while not self.check(T.DEDENT, T.EOF):
             mtok = self.expect(T.FN, "only method definitions (pull ...) are allowed directly inside a class body")
             mname = self.expect(T.NAME, "expected a method name").value
-            params = self.parse_params()
+            params, defaults = self.parse_params()
             body = self.parse_block()
-            methods[mname] = A.FnExpr(params, body, name=mname, line=mtok.line)
+            methods[mname] = A.FnExpr(params, defaults, body, name=mname, line=mtok.line)
             self.skip_newlines()
         self.expect(T.DEDENT, "expected the class body to end (dedent)")
         return A.ClassDecl(name, superclass_name, methods, line=tok.line)
@@ -456,9 +476,9 @@ class Parser:
 
     def parse_fn_expr(self):
         tok = self.advance()
-        params = self.parse_params()
+        params, defaults = self.parse_params()
         body = self.parse_block()
-        return A.FnExpr(params, body, line=tok.line)
+        return A.FnExpr(params, defaults, body, line=tok.line)
 
     def _parse_string_parts(self, raw_parts):
         parsed = []

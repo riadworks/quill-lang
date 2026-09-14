@@ -137,7 +137,7 @@ class Interpreter:
                 raise RuntimeErr(f"'{stmt.superclass_name}' is not a class", stmt.line)
         quill_class = QuillClass(stmt.name, {}, superclass)
         quill_class.methods = {
-            name: QuillFunction(name, fn_expr.params, fn_expr.body, env, owner_class=quill_class)
+            name: QuillFunction(name, fn_expr.params, fn_expr.defaults, fn_expr.body, env, owner_class=quill_class)
             for name, fn_expr in stmt.methods.items()
         }
         env.declare(stmt.name, quill_class)
@@ -424,7 +424,7 @@ class Interpreter:
         return self.call(callee, args, expr.line)
 
     def eval_FnExpr(self, expr: A.FnExpr, env):
-        return QuillFunction(expr.name, expr.params, expr.body, env)
+        return QuillFunction(expr.name, expr.params, expr.defaults, expr.body, env)
 
     def eval_Ternary(self, expr: A.Ternary, env):
         if is_truthy(self.evaluate(expr.cond, env)):
@@ -504,14 +504,25 @@ class Interpreter:
         raise RuntimeErr(f"'{type_name(callee)}' is not callable", line)
 
     def _call_quill_function(self, fn: QuillFunction, args, line, self_instance=None):
-        if len(args) != len(fn.params):
-            raise RuntimeErr(f"'{fn.name or 'anonymous'}' expects {len(fn.params)} argument(s), got {len(args)}", line)
+        num_total = len(fn.params)
+        num_required = sum(1 for d in fn.defaults if d is None)
+        if not (num_required <= len(args) <= num_total):
+            label = f"{num_total}" if num_required == num_total else f"{num_required}-{num_total}"
+            raise RuntimeErr(f"'{fn.name or 'anonymous'}' expects {label} argument(s), got {len(args)}", line)
         call_env = Environment(fn.closure)
         if self_instance is not None:
             call_env.declare("self", self_instance)
             call_env.declare("__super_class__", fn.owner_class.superclass if fn.owner_class else None)
-        for name, value in zip(fn.params, args):
-            call_env.declare(name, value)
+        # Defaults are evaluated here, in the call's own environment, rather than
+        # once at definition time the way Python does it - so a default can refer
+        # to an earlier parameter (`pull f(a, b=a*2):`), and there's no equivalent
+        # of Python's classic mutable-default-argument bug, since nothing is
+        # computed once and reused across calls.
+        for i, name in enumerate(fn.params):
+            if i < len(args):
+                call_env.declare(name, args[i])
+            else:
+                call_env.declare(name, self.evaluate(fn.defaults[i], call_env))
         try:
             self._exec_block(fn.body, call_env)
         except ReturnSignal as r:

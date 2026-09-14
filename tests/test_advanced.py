@@ -953,6 +953,68 @@ def test_list_set_operations():
     assert out.splitlines() == ["[1, 2, 3, 4]", "[2, 3]", "[1]"]
 
 
+def test_default_parameter_values():
+    out = run(
+        'pull greet(name, greeting="Hello"):\n'
+        '    return f"{greeting}, {name}!"\n'
+        'print(greet("Ada"))\n'
+        'print(greet("Ada", "Hi"))\n'
+    )
+    assert out.splitlines() == ["Hello, Ada!", "Hi, Ada!"]
+
+
+def test_default_parameter_can_reference_an_earlier_parameter():
+    out = run(
+        "pull scale(x, factor=2, offset=x):\n"
+        "    return x * factor + offset\n"
+        "print(scale(5))\n"
+        "print(scale(5, 3))\n"
+        "print(scale(5, 3, 1))\n"
+    )
+    assert out.splitlines() == ["15", "20", "16"]
+
+
+def test_default_parameters_on_anonymous_function_and_method():
+    out = run(
+        "let inc = pull(x, by=1): return x + by\n"
+        "print(inc(10))\n"
+        "print(inc(10, 5))\n"
+        "class Counter:\n"
+        "    pull init(start=0):\n"
+        "        self.n = start\n"
+        "    pull add(amount=1):\n"
+        "        self.n = self.n + amount\n"
+        "        return self.n\n"
+        "let c = Counter()\n"
+        "print(c.n)\n"
+        "print(c.add())\n"
+        "print(c.add(5))\n"
+        "print(Counter(100).n)\n"
+    )
+    assert out.splitlines() == ["11", "15", "0", "1", "6", "100"]
+
+
+def test_default_parameter_arity_error_shows_a_range():
+    msg = run_expect_error('pull greet(name, greeting="Hello"):\n    return greeting\ngreet()\n')
+    assert "expects 1-2 argument" in msg
+    msg = run_expect_error('pull greet(name, greeting="Hello"):\n    return greeting\ngreet("a", "b", "c")\n')
+    assert "expects 1-2 argument" in msg
+
+
+def test_required_arity_message_unchanged_with_no_defaults():
+    msg = run_expect_error("pull add(a, b):\n    return a + b\nadd(1)\n")
+    assert "expects 2 argument" in msg
+
+
+def test_non_default_parameter_after_default_is_a_parse_error():
+    from quill.errors import ParseError
+    from quill.lexer import tokenize
+    from quill.parser import parse
+
+    with pytest.raises(ParseError, match="without a default value follows"):
+        parse(tokenize("pull f(a=1, b):\n    return a + b\n"))
+
+
 def test_random_int_stays_in_range():
     out = run(
         "let ok = true\n"

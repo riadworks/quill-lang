@@ -88,6 +88,15 @@ indentation at all, which also happens to be the only way an anonymous
 function can have a body while nested inside a call's parentheses in the
 first place.
 
+Parameters can have default values - `pull greet(name, greeting="Hello"):` -
+with the same rule Python enforces (every parameter after the first
+defaulted one needs a default too, since arguments fill in from the left).
+Unlike Python, a default is evaluated fresh in the call's own scope each
+time the function runs, not once at definition time - so
+`pull f(items=[]):` gets a new empty list on every call instead of Python's
+classic shared-mutable-default bug, and a later default can even refer to
+an earlier parameter: `pull scale(x, factor=2, offset=x):`.
+
 ### Classes
 
 ```

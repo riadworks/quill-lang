@@ -9,11 +9,12 @@ from quill.errors import RuntimeErr
 
 
 class QuillFunction:
-    __slots__ = ("name", "params", "body", "closure", "owner_class")
+    __slots__ = ("name", "params", "defaults", "body", "closure", "owner_class")
 
-    def __init__(self, name, params, body, closure, owner_class=None):
+    def __init__(self, name, params, defaults, body, closure, owner_class=None):
         self.name = name
         self.params = params
+        self.defaults = defaults
         self.body = body
         self.closure = closure
         # the class this was defined in as a method, if any - lets `super` inside it

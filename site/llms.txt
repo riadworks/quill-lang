@@ -23,7 +23,7 @@ This provides a `quill` command: run with no arguments for a REPL, or `quill scr
 
 - Classes with single inheritance, `super.method()` resolving correctly through deep chains
 - Exceptions: `try` / `except` / `finally`, catching both user `raise`s and built-in runtime errors
-- Closures and first-class functions
+- Closures and first-class functions, with Python-style default parameter values (re-evaluated per call, so no shared-mutable-default gotcha)
 - A module system (`import "file.ql" as name`)
 - Operator overloading via dunder methods (`__add__`, `__eq__`, `__str__`, etc.)
 - List/map comprehensions and destructuring assignment
