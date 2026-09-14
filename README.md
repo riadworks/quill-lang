@@ -22,8 +22,9 @@ project's README for the full pipx walkthrough if you want that).
 ## Usage
 
 ```powershell
-quill                  # start the REPL
-quill script.ql        # run a script
+quill                       # start the REPL
+quill script.ql             # run a script
+quill script.ql foo bar     # run a script - "foo" and "bar" show up as args() inside it
 ```
 
 ## The language
@@ -200,8 +201,10 @@ Paths are resolved relative to the importing file.
   raises if missing) `.count(s)` `.repeat(n)` `.pad_start(width, [ch])`
   `.pad_end(width, [ch])` `.title()` `.capitalize()` `.swap_case()`
   `.reverse()` `.is_digit()` `.is_alpha()` `.is_alnum()` `.is_upper()`
-  `.is_lower()` `.is_space()` `.center(width, [ch])` `.zfill(width)`
-  `.remove_prefix(s)` `.remove_suffix(s)` `.split_lines()`
+  `.is_lower()` `.is_space()` `.is_ascii()` `.byte_length()`
+  `.center(width, [ch])` `.zfill(width)` `.remove_prefix(s)`
+  `.remove_suffix(s)` `.split_lines()` `.to_snake_case()`
+  `.to_camel_case()` `.to_kebab_case()`
 - `true` / `false` / `nil`
 - Lists: `[1, 2, 3]`, indexed with `xs[0]`/`xs[-1]`, with methods:
   `.push(x)` `.pop()`/`.pop(i)` `.insert(i, x)` `.remove(x)` `.clear()`
@@ -209,14 +212,19 @@ Paths are resolved relative to the importing file.
   `.sort(key_fn)` `.sort(reverse)` `.reverse()` `.contains(x)` `.index_of(x)`
   `.join(sep)` `.map(f)` `.filter(f)` `.reduce(f, init)` `.flat_map(f)`
   `.chunk(n)` `.group_by(f)` `.union(other)` `.intersect(other)`
-  `.difference(other)` (`.sort()` and
+  `.difference(other)` `.take(n)` `.drop(n)` `.take_last(n)`
+  `.drop_last(n)` `.take_while(f)` `.drop_while(f)` `.find(f)`
+  `.find_index(f)` `.partition(f)` `.tally()` `.every(f)` `.some(f)`
+  `.zip_with(other, f)` `.rotate(n)` `.shuffle()` `.choice()`
+  (`.sort()` and
   `.reverse()` return a new list rather than mutating, matching the
   standalone `sorted()`; `.sort()`'s extra argument can be a key function, a
   `true`/`false` for reverse order, or both, in either order)
 - Maps: `{"key": "value"}`, indexed with `m["key"]` or `m.key`, with methods:
   `.keys()` `.values()` `.items()` `.has(k)` `.get(k, default)`
   `.pop(k, [default])` `.clear()` `.copy()` `.update(other)`
-  `.setdefault(k, default)`
+  `.setdefault(k, default)` `.map_values(f)` `.merged(other)`
+  `.invert()` `.pick(keys)` `.omit(keys)` `.key_of(value)`
 - Ternary expression: `"big" if x > 5 else "small"`
 - Comprehensions: `[x * x for x in xs if x > 0]`, `{k: v.upper() for k, v in m.items()}`,
   chaining multiple `for`/`if` clauses works the same as Python's does:
@@ -244,8 +252,12 @@ Paths are resolved relative to the importing file.
 `html_unescape`, `csv_parse`, `csv_stringify`, `bit_and`, `bit_or`,
 `bit_xor`, `bit_not`, `bit_shift_left`, `bit_shift_right`, `is_number`,
 `is_string`, `is_list`, `is_map`, `is_bool`, `is_nil`, `is_function`,
-`is_class`, plus the constants `PI`, `E`, `INF`, and `NAN`. (The older
-top-level `push`/`pop`/`keys`/etc.
+`is_class`, `mean`, `median`, `mode`, `variance`, `stdev`, `percentile`,
+`date_format`, `date_parse`, `clamp`, `lerp`, `sign`, `is_even`,
+`is_odd`, `hex_encode`, `hex_decode`, `md5`, `sha1`, `sha512`,
+`hmac_sha256`, `args`, `platform`, `text_wrap`, `sample`, plus the
+constants `PI`, `E`, `INF`, `NAN`, and `TAU`. (The older top-level
+`push`/`pop`/`keys`/etc.
 and the newer `.push()`/`.pop()`/`.keys()` method forms both work and do the
 same thing — the methods are just nicer to chain.)
 
@@ -287,7 +299,24 @@ list of row-lists; `bit_and`/`bit_or`/`bit_xor`/`bit_not`/
 `bit_shift_left`/`bit_shift_right` cover bitwise work with no dedicated
 operators for it; and `is_number`/`is_string`/`is_list`/`is_map`/
 `is_bool`/`is_nil`/`is_function`/`is_class` are readable shorthands for
-`type(v) == "..."`. `INF` and `NAN` round out `PI`/`E` as constants.
+`type(v) == "..."`. `INF`, `NAN`, and `TAU` round out `PI`/`E` as constants.
+
+`mean`/`median`/`mode`/`variance`/`stdev` (sample, not population) and
+`percentile(list, p)` cover basic statistics. `date_format(timestamp, fmt)`/
+`date_parse(text, fmt)` use the same `%Y`-`%m`-`%d`-style codes as Python's
+`time.strftime`/`time.strptime`. `clamp(n, lo, hi)`, `lerp(a, b, t)`,
+`sign(n)`, `is_even(n)`, and `is_odd(n)` are small, extremely common
+utilities that didn't have a home in any category above. `hex_encode`/
+`hex_decode` round-trip a string through hex (distinct from the numeric
+`hex()` added earlier); `md5`/`sha1`/`sha512` sit alongside `sha256` for
+compatibility/checksum use (still not for password storage - that's what
+`password_hash` is for), and `hmac_sha256(key, message)` covers signing a
+token or verifying a webhook payload. `args()` returns whatever was typed
+after the script name on the command line (`quill script.ql foo bar` ->
+`["foo", "bar"]` inside the script) - scripts genuinely could not see their
+own arguments before this. `platform()` returns `"Windows"`/`"Linux"`/
+`"Darwin"`. `text_wrap(s, width)` wraps text into a list of lines.
+`sample(list, n)` picks `n` elements at random without repeats.
 
 `password_hash(password)` / `password_verify(password, hash)` are for real
 user passwords: salted PBKDF2-HMAC-SHA256 (260,000 iterations) with a

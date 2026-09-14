@@ -109,6 +109,17 @@ nums[0] = 99      <span class="cmt"># indexing assigns too</span></pre>
         <tr><td><code>.chunk(n)</code></td><td>Splits into sub-lists of length <code>n</code> (the last one may be shorter).</td></tr>
         <tr><td><code>.group_by(fn)</code></td><td>A map from each distinct <code>fn(item)</code> result to the list of items that produced it.</td></tr>
         <tr><td><code>.union(other)</code> / <code>.intersect(other)</code> / <code>.difference(other)</code></td><td>Set-style combination of two lists, de-duplicated, order preserved: everything in either / only in both / only in this one.</td></tr>
+        <tr><td><code>.take(n)</code> / <code>.drop(n)</code></td><td>The first <code>n</code> elements, or everything after the first <code>n</code> — the closest thing to slicing without slice syntax.</td></tr>
+        <tr><td><code>.take_last(n)</code> / <code>.drop_last(n)</code></td><td>Same idea, counted from the end.</td></tr>
+        <tr><td><code>.take_while(fn)</code> / <code>.drop_while(fn)</code></td><td>Elements up to (or after) the first one where <code>fn(item)</code> stops being truthy.</td></tr>
+        <tr><td><code>.find(fn)</code></td><td>The first element where <code>fn(item)</code> is truthy, or <code>nil</code>.</td></tr>
+        <tr><td><code>.find_index(fn)</code></td><td>Its index instead, or <code>-1</code>.</td></tr>
+        <tr><td><code>.partition(fn)</code></td><td><code>[matching, non_matching]</code> — splits the list in one pass instead of two <code>.filter()</code> calls.</td></tr>
+        <tr><td><code>.tally()</code></td><td>A map from each distinct element to how many times it appears.</td></tr>
+        <tr><td><code>.every(fn)</code> / <code>.some(fn)</code></td><td>Whether <code>fn(item)</code> is truthy for all / any elements — like <code>all()</code>/<code>any()</code>, but with a predicate instead of checking truthiness directly.</td></tr>
+        <tr><td><code>.zip_with(other, fn)</code></td><td>Combines two lists position by position through <code>fn(a, b)</code>, instead of just pairing them like <code>zip()</code> does.</td></tr>
+        <tr><td><code>.rotate(n)</code></td><td>Shifts elements around by <code>n</code> positions, wrapping at the ends.</td></tr>
+        <tr><td><code>.shuffle()</code> / <code>.choice()</code></td><td>Method forms of the top-level <code>shuffle()</code>/<code>random_choice()</code> from Lesson 12.</td></tr>
       </table>
       <pre class="code-block"><span class="fnname">print</span>([1, 2, 3, 4, 5].chunk(2))                          <span class="cmt"># [[1, 2], [3, 4], [5]]</span>
 <span class="fnname">print</span>([1, 2, 3, 4, 5, 6].group_by(<span class="kw">pull</span>(x): <span class="kw">return</span> x % 2))   <span class="cmt"># {1: [1, 3, 5], 0: [2, 4, 6]}</span></pre>
@@ -159,6 +170,11 @@ person[<span class="str">"age"</span>] = 37     <span class="cmt"># assignment t
         <tr><td><code>.copy()</code></td><td>A shallow copy, as a new map.</td></tr>
         <tr><td><code>.update(other)</code></td><td>Merges <code>other</code> into this map in place, overwriting shared keys.</td></tr>
         <tr><td><code>.setdefault(k, default)</code></td><td>Returns the value at <code>k</code> if present; otherwise sets it to <code>default</code> and returns that.</td></tr>
+        <tr><td><code>.map_values(fn)</code></td><td>New map with every value replaced by <code>fn(value)</code>; keys unchanged.</td></tr>
+        <tr><td><code>.merged(other)</code></td><td>Like <code>.update()</code>, but returns a new map instead of mutating.</td></tr>
+        <tr><td><code>.invert()</code></td><td>New map with keys and values swapped.</td></tr>
+        <tr><td><code>.pick(keys)</code> / <code>.omit(keys)</code></td><td>New map with only the given keys, or with everything except them.</td></tr>
+        <tr><td><code>.key_of(value)</code></td><td>The first key that maps to <code>value</code>, or <code>nil</code>.</td></tr>
       </table>
       <p>
         As with lists, top-level equivalents exist: <code>keys(m)</code>,

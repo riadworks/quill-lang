@@ -1015,6 +1015,189 @@ def test_non_default_parameter_after_default_is_a_parse_error():
         parse(tokenize("pull f(a=1, b):\n    return a + b\n"))
 
 
+def test_statistics_functions():
+    out = run(
+        "print(mean([1, 2, 3, 4]))\n"
+        "print(median([1, 2, 3, 4]))\n"
+        "print(mode([1, 1, 2, 3]))\n"
+        "print(round(variance([2, 4, 4, 4, 5, 5, 7, 9]), 4))\n"
+        "print(round(stdev([2, 4, 4, 4, 5, 5, 7, 9]), 4))\n"
+        "print(percentile([1, 2, 3, 4, 5], 50))\n"
+    )
+    assert out.splitlines() == ["2.5", "2.5", "1", "4.5714", "2.1381", "3"]
+
+
+def test_statistics_on_empty_list_is_a_clean_error():
+    assert "empty" in run_expect_error("mean([])\n")
+
+
+def test_date_format_and_parse():
+    out = run('print(date_format(0, "%Y-%m-%d"))\nprint(type(date_parse("2024-01-15", "%Y-%m-%d")))\n')
+    assert out.splitlines() == ["1970-01-01", "number"]
+
+
+def test_clamp_lerp_sign():
+    out = run(
+        "print(clamp(15, 0, 10))\n"
+        "print(clamp(-5, 0, 10))\n"
+        "print(lerp(0, 10, 0.5))\n"
+        "print(sign(-5))\n"
+        "print(sign(0))\n"
+        "print(sign(5))\n"
+    )
+    assert out.splitlines() == ["10", "0", "5", "-1", "0", "1"]
+
+
+def test_is_even_and_is_odd():
+    out = run("print(is_even(4))\nprint(is_odd(4))\n")
+    assert out.splitlines() == ["true", "false"]
+
+
+def test_hex_encode_decode_round_trip():
+    out = run('print(hex_decode(hex_encode("quill")))\n')
+    assert out.strip() == "quill"
+
+
+def test_hash_functions():
+    out = run('print(len(md5("hi")))\nprint(len(sha1("hi")))\nprint(len(sha512("hi")))\n')
+    assert out.splitlines() == ["32", "40", "128"]
+
+
+def test_hmac_sha256_is_keyed():
+    out = run(
+        'print(hmac_sha256("key", "message") == hmac_sha256("key", "message"))\n'
+        'print(hmac_sha256("key", "message") != hmac_sha256("key2", "message"))\n'
+    )
+    assert out.splitlines() == ["true", "true"]
+
+
+def test_args_receives_extra_cli_arguments():
+    import contextlib
+    import io
+
+    from quill.builtins import build_globals
+    from quill.interpreter import Interpreter
+    from quill.lexer import tokenize
+    from quill.parser import parse
+
+    env = build_globals(["foo", "bar", "--flag=1"])
+    interp = Interpreter(env)
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        interp.run(parse(tokenize("print(args())\n")))
+    assert buf.getvalue() == '["foo", "bar", "--flag=1"]\n'
+
+
+def test_args_defaults_to_empty_list():
+    out = run("print(args())\n")
+    assert out.strip() == "[]"
+
+
+def test_platform_returns_a_string():
+    out = run("print(type(platform()))\n")
+    assert out.strip() == "string"
+
+
+def test_text_wrap():
+    out = run(
+        'let lines = text_wrap("the quick brown fox", 10)\n'
+        "print(lines.every(pull(line): return len(line) <= 10))\n"
+        'print(lines.join(" "))\n'
+    )
+    assert out.splitlines() == ["true", "the quick brown fox"]
+
+
+def test_sample_returns_requested_count_from_the_list():
+    out = run("let s = sample([1, 2, 3, 4, 5], 3)\nprint(len(s))\nfor x in s:\n    assert([1,2,3,4,5].contains(x))\nprint(\"ok\")\n")
+    assert out.splitlines() == ["3", "ok"]
+
+
+def test_string_case_conversions():
+    out = run(
+        'print("helloWorld".to_snake_case())\n'
+        'print("hello_world".to_camel_case())\n'
+        'print("HelloWorld".to_kebab_case())\n'
+        'print("XMLHttpRequest".to_snake_case())\n'
+    )
+    assert out.splitlines() == ["hello_world", "helloWorld", "hello-world", "xml_http_request"]
+
+
+def test_is_ascii_and_byte_length():
+    # "héllo" here is a Python string escape resolved before Quill ever sees the
+    # source - Quill's own lexer has no \u escape at all, so this must not be written
+    # as \\u (a literal backslash-u, which Quill would just pass through as "u").
+    out = run('print("hello".is_ascii())\nprint("hello".byte_length())\nprint("héllo".byte_length())\n')
+    assert out.splitlines() == ["true", "5", "6"]
+
+
+def test_take_drop_family():
+    out = run(
+        "let xs = [1, 2, 3, 4, 5]\n"
+        "print(xs.take(2))\n"
+        "print(xs.drop(2))\n"
+        "print(xs.take_last(2))\n"
+        "print(xs.drop_last(2))\n"
+        "print(xs.take_while(pull(x): return x < 3))\n"
+        "print(xs.drop_while(pull(x): return x < 3))\n"
+    )
+    assert out.splitlines() == ["[1, 2]", "[3, 4, 5]", "[4, 5]", "[1, 2, 3]", "[1, 2]", "[3, 4, 5]"]
+
+
+def test_find_find_index_partition_tally():
+    out = run(
+        "print([1, 2, 3, 4].find(pull(x): return x > 2))\n"
+        "print([1, 2, 3, 4].find_index(pull(x): return x > 2))\n"
+        "print([1, 2, 3, 4].partition(pull(x): return x % 2 == 0))\n"
+        "print([1, 1, 2, 3, 3, 3].tally())\n"
+    )
+    assert out.splitlines() == ["3", "2", "[[2, 4], [1, 3]]", "{1: 2, 2: 1, 3: 3}"]
+
+
+def test_every_some_zip_with_rotate():
+    out = run(
+        "print([2, 4, 6].every(pull(x): return x % 2 == 0))\n"
+        "print([2, 4, 5].some(pull(x): return x % 2 != 0))\n"
+        "print([1, 2, 3].zip_with([10, 20, 30], pull(a, b): return a + b))\n"
+        "print([1, 2, 3, 4, 5].rotate(2))\n"
+    )
+    assert out.splitlines() == ["true", "true", "[11, 22, 33]", "[3, 4, 5, 1, 2]"]
+
+
+def test_list_shuffle_and_choice_methods():
+    out = run("print(len([1, 2, 3].shuffle()))\nprint([1, 2, 3].contains([1, 2, 3].choice()))\n")
+    assert out.splitlines() == ["3", "true"]
+
+
+def test_map_utility_methods():
+    out = run(
+        '''let m = {"a": 1, "b": 2, "c": 3}
+print(m.map_values(pull(v): return v * 10))
+print(m.merged({"c": 99, "d": 4}))
+print(m)
+print({"a": 1, "b": 2}.invert())
+print(m.pick(["a", "c"]))
+print(m.omit(["a", "c"]))
+print(m.key_of(2))
+print(m.key_of(999))
+'''
+    )
+    assert out.splitlines() == [
+        '{"a": 10, "b": 20, "c": 30}',
+        '{"a": 1, "b": 2, "c": 99, "d": 4}',
+        '{"a": 1, "b": 2, "c": 3}',
+        '{1: "a", 2: "b"}',
+        '{"a": 1, "c": 3}',
+        '{"b": 2}',
+        "b",
+        "nil",
+    ]
+
+
+def test_tau_constant():
+    out = run("print(round(TAU / PI, 5))\n")
+    assert out.strip() == "2"
+
+
 def test_random_int_stays_in_range():
     out = run(
         "let ok = true\n"

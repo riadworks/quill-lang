@@ -22,7 +22,7 @@ def _require_list(name, value, line):
     return value
 
 
-def build_globals() -> Environment:
+def build_globals(script_args=None) -> Environment:
     env = Environment()
 
     def reg(name, fn):
@@ -922,6 +922,215 @@ def build_globals() -> Environment:
         _arity("is_class", args, line, 1)
         return isinstance(args[0], QuillClass)
 
+    def b_mean(args, line):
+        import statistics
+
+        _arity("mean", args, line, 1)
+        lst = _require_list("mean", args[0], line)
+        if not lst:
+            raise RuntimeErr("mean() on an empty list", line)
+        return statistics.mean(lst)
+
+    def b_median(args, line):
+        import statistics
+
+        _arity("median", args, line, 1)
+        lst = _require_list("median", args[0], line)
+        if not lst:
+            raise RuntimeErr("median() on an empty list", line)
+        return statistics.median(lst)
+
+    def b_mode(args, line):
+        import statistics
+
+        _arity("mode", args, line, 1)
+        lst = _require_list("mode", args[0], line)
+        if not lst:
+            raise RuntimeErr("mode() on an empty list", line)
+        return statistics.mode(lst)
+
+    def b_variance(args, line):
+        import statistics
+
+        _arity("variance", args, line, 1)
+        lst = _require_list("variance", args[0], line)
+        if len(lst) < 2:
+            raise RuntimeErr("variance() needs at least 2 values", line)
+        return statistics.variance(lst)
+
+    def b_stdev(args, line):
+        import statistics
+
+        _arity("stdev", args, line, 1)
+        lst = _require_list("stdev", args[0], line)
+        if len(lst) < 2:
+            raise RuntimeErr("stdev() needs at least 2 values", line)
+        return statistics.stdev(lst)
+
+    def b_percentile(args, line):
+        _arity("percentile", args, line, 2)
+        lst = _require_list("percentile", args[0], line)
+        p = _require_number("percentile", args[1], line)
+        if not lst:
+            raise RuntimeErr("percentile() on an empty list", line)
+        if not (0 <= p <= 100):
+            raise RuntimeErr("percentile() expects p between 0 and 100", line)
+        data = sorted(lst)
+        k = (len(data) - 1) * (p / 100)
+        f = int(k)
+        c = min(f + 1, len(data) - 1)
+        if f == c:
+            return data[f]
+        return data[f] * (c - k) + data[c] * (k - f)
+
+    def b_date_format(args, line):
+        import time as _time
+
+        _arity("date_format", args, line, 2)
+        ts = _require_number("date_format", args[0], line)
+        fmt = args[1]
+        if not isinstance(fmt, str):
+            raise RuntimeErr("date_format() expects a string format", line)
+        try:
+            return _time.strftime(fmt, _time.localtime(ts))
+        except (ValueError, OSError) as exc:
+            raise RuntimeErr(f"date_format() failed: {exc}", line)
+
+    def b_date_parse(args, line):
+        import time as _time
+
+        _arity("date_parse", args, line, 2)
+        text, fmt = args
+        if not isinstance(text, str) or not isinstance(fmt, str):
+            raise RuntimeErr("date_parse() expects two strings", line)
+        try:
+            return _time.mktime(_time.strptime(text, fmt))
+        except ValueError as exc:
+            raise RuntimeErr(f"date_parse() failed: {exc}", line)
+
+    def b_clamp(args, line):
+        _arity("clamp", args, line, 3)
+        n = _require_number("clamp", args[0], line)
+        lo = _require_number("clamp", args[1], line)
+        hi = _require_number("clamp", args[2], line)
+        if lo > hi:
+            raise RuntimeErr("clamp() needs lo <= hi", line)
+        return max(lo, min(n, hi))
+
+    def b_lerp(args, line):
+        _arity("lerp", args, line, 3)
+        a = _require_number("lerp", args[0], line)
+        b = _require_number("lerp", args[1], line)
+        t = _require_number("lerp", args[2], line)
+        return a + (b - a) * t
+
+    def b_sign(args, line):
+        _arity("sign", args, line, 1)
+        n = _require_number("sign", args[0], line)
+        return (n > 0) - (n < 0)
+
+    def b_is_even(args, line):
+        _arity("is_even", args, line, 1)
+        n = _require_number("is_even", args[0], line)
+        if n != int(n):
+            raise RuntimeErr("is_even() expects a whole number", line)
+        return int(n) % 2 == 0
+
+    def b_is_odd(args, line):
+        _arity("is_odd", args, line, 1)
+        n = _require_number("is_odd", args[0], line)
+        if n != int(n):
+            raise RuntimeErr("is_odd() expects a whole number", line)
+        return int(n) % 2 != 0
+
+    def b_hex_encode(args, line):
+        _arity("hex_encode", args, line, 1)
+        text = args[0]
+        if not isinstance(text, str):
+            raise RuntimeErr(f"hex_encode() expects a string, got {type_name(text)}", line)
+        return text.encode("utf-8").hex()
+
+    def b_hex_decode(args, line):
+        import binascii
+
+        _arity("hex_decode", args, line, 1)
+        text = args[0]
+        if not isinstance(text, str):
+            raise RuntimeErr(f"hex_decode() expects a string, got {type_name(text)}", line)
+        try:
+            return bytes.fromhex(text).decode("utf-8", errors="replace")
+        except (ValueError, binascii.Error):
+            raise RuntimeErr("invalid hex input", line)
+
+    def b_md5(args, line):
+        import hashlib
+
+        _arity("md5", args, line, 1)
+        text = args[0]
+        if not isinstance(text, str):
+            raise RuntimeErr(f"md5() expects a string, got {type_name(text)}", line)
+        return hashlib.md5(text.encode("utf-8")).hexdigest()
+
+    def b_sha1(args, line):
+        import hashlib
+
+        _arity("sha1", args, line, 1)
+        text = args[0]
+        if not isinstance(text, str):
+            raise RuntimeErr(f"sha1() expects a string, got {type_name(text)}", line)
+        return hashlib.sha1(text.encode("utf-8")).hexdigest()
+
+    def b_sha512(args, line):
+        import hashlib
+
+        _arity("sha512", args, line, 1)
+        text = args[0]
+        if not isinstance(text, str):
+            raise RuntimeErr(f"sha512() expects a string, got {type_name(text)}", line)
+        return hashlib.sha512(text.encode("utf-8")).hexdigest()
+
+    def b_hmac_sha256(args, line):
+        import hashlib
+        import hmac as _hmac
+
+        _arity("hmac_sha256", args, line, 2)
+        key, message = args
+        if not isinstance(key, str) or not isinstance(message, str):
+            raise RuntimeErr("hmac_sha256() expects two strings", line)
+        return _hmac.new(key.encode("utf-8"), message.encode("utf-8"), hashlib.sha256).hexdigest()
+
+    def b_args(args, line):
+        _arity("args", args, line, 0)
+        return list(script_args or [])
+
+    def b_platform(args, line):
+        import platform as _platform
+
+        _arity("platform", args, line, 0)
+        return _platform.system()
+
+    def b_text_wrap(args, line):
+        import textwrap
+
+        _arity("text_wrap", args, line, 2)
+        text = args[0]
+        if not isinstance(text, str):
+            raise RuntimeErr(f"text_wrap() expects a string, got {type_name(text)}", line)
+        width = int(_require_number("text_wrap", args[1], line))
+        if width < 1:
+            raise RuntimeErr("text_wrap() width must be at least 1", line)
+        return textwrap.wrap(text, width)
+
+    def b_sample(args, line):
+        import random as _random
+
+        _arity("sample", args, line, 2)
+        lst = _require_list("sample", args[0], line)
+        n = int(_require_number("sample", args[1], line))
+        if n < 0 or n > len(lst):
+            raise RuntimeErr(f"sample() size must be between 0 and {len(lst)}", line)
+        return _random.sample(lst, n)
+
     def b_env_get(args, line):
         import os
 
@@ -1040,9 +1249,33 @@ def build_globals() -> Environment:
     reg("is_nil", b_is_nil)
     reg("is_function", b_is_function)
     reg("is_class", b_is_class)
+    reg("mean", b_mean)
+    reg("median", b_median)
+    reg("mode", b_mode)
+    reg("variance", b_variance)
+    reg("stdev", b_stdev)
+    reg("percentile", b_percentile)
+    reg("date_format", b_date_format)
+    reg("date_parse", b_date_parse)
+    reg("clamp", b_clamp)
+    reg("lerp", b_lerp)
+    reg("sign", b_sign)
+    reg("is_even", b_is_even)
+    reg("is_odd", b_is_odd)
+    reg("hex_encode", b_hex_encode)
+    reg("hex_decode", b_hex_decode)
+    reg("md5", b_md5)
+    reg("sha1", b_sha1)
+    reg("sha512", b_sha512)
+    reg("hmac_sha256", b_hmac_sha256)
+    reg("args", b_args)
+    reg("platform", b_platform)
+    reg("text_wrap", b_text_wrap)
+    reg("sample", b_sample)
     env.declare("PI", 3.141592653589793)
     env.declare("E", 2.718281828459045)
     env.declare("INF", float("inf"))
     env.declare("NAN", float("nan"))
+    env.declare("TAU", 6.283185307179586)
 
     return env

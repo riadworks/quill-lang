@@ -108,9 +108,12 @@ hi
       </p>
       <p>
         To run a whole program from a file instead, save it with a <code>.ql</code>
-        extension and pass the path:
+        extension and pass the path. Anything typed after the path is available inside
+        the script through <code>args()</code> — <code>quill script.ql foo bar</code>
+        makes <code>args()</code> return <code>["foo", "bar"]</code>:
       </p>
-      <pre class="shell">quill script.ql</pre>
+      <pre class="shell">quill script.ql
+quill script.ql foo bar</pre>
 
       <h2>Your first program</h2>
       <p>Save this as <code>hello.ql</code>:</p>

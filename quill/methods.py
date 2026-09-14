@@ -171,6 +171,46 @@ def _s_is_space(s, args, line):
     return s.isspace()
 
 
+def _s_is_ascii(s, args, line):
+    _arity("is_ascii", args, line, 0)
+    return s.isascii()
+
+
+def _s_byte_length(s, args, line):
+    _arity("byte_length", args, line, 0)
+    return len(s.encode("utf-8"))
+
+
+def _to_words(s):
+    """Splits a string on case boundaries and separators, for the case-
+    conversion methods below - the standard two-pass approach that correctly
+    handles a leading acronym ('XMLHttpRequest' -> ['XML', 'Http', 'Request']),
+    not just a simple camelCase boundary."""
+    import re
+
+    s1 = re.sub(r"(.)([A-Z][a-z]+)", r"\1_\2", s)
+    s2 = re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", s1)
+    return [p for p in re.split(r"[\s_\-]+", s2) if p]
+
+
+def _s_to_snake_case(s, args, line):
+    _arity("to_snake_case", args, line, 0)
+    return "_".join(w.lower() for w in _to_words(s))
+
+
+def _s_to_kebab_case(s, args, line):
+    _arity("to_kebab_case", args, line, 0)
+    return "-".join(w.lower() for w in _to_words(s))
+
+
+def _s_to_camel_case(s, args, line):
+    _arity("to_camel_case", args, line, 0)
+    words = _to_words(s)
+    if not words:
+        return ""
+    return words[0].lower() + "".join(w.capitalize() for w in words[1:])
+
+
 def _s_center(s, args, line):
     _arity("center", args, line, 1, 2)
     width = int(_require_num("center", args[0], line))
@@ -235,6 +275,11 @@ STRING_METHODS = {
     "remove_prefix": _s_remove_prefix,
     "remove_suffix": _s_remove_suffix,
     "split_lines": _s_split_lines,
+    "is_ascii": _s_is_ascii,
+    "byte_length": _s_byte_length,
+    "to_snake_case": _s_to_snake_case,
+    "to_kebab_case": _s_to_kebab_case,
+    "to_camel_case": _s_to_camel_case,
 }
 
 
@@ -490,6 +535,173 @@ def _l_difference(lst, args, line):
     return result
 
 
+def _require_nonneg_int(name, value, line):
+    if not isinstance(value, int) or isinstance(value, bool) or value < 0:
+        raise RuntimeErr(f"{name}() count must be a non-negative whole number", line)
+    return value
+
+
+def _l_take(lst, args, line):
+    _arity("take", args, line, 1)
+    n = _require_nonneg_int("take", args[0], line)
+    return lst[:n]
+
+
+def _l_drop(lst, args, line):
+    _arity("drop", args, line, 1)
+    n = _require_nonneg_int("drop", args[0], line)
+    return lst[n:]
+
+
+def _l_take_last(lst, args, line):
+    _arity("take_last", args, line, 1)
+    n = _require_nonneg_int("take_last", args[0], line)
+    return lst[len(lst) - n :] if n > 0 else []
+
+
+def _l_drop_last(lst, args, line):
+    _arity("drop_last", args, line, 1)
+    n = _require_nonneg_int("drop_last", args[0], line)
+    return lst[: len(lst) - n] if n > 0 else list(lst)
+
+
+def _l_take_while(lst, args, line):
+    from quill.interpreter import CURRENT_INTERPRETER
+    from quill.values import is_truthy
+
+    _arity("take_while", args, line, 1)
+    fn = args[0]
+    interp = CURRENT_INTERPRETER[0]
+    result = []
+    for x in lst:
+        if not is_truthy(interp.call(fn, [x], line)):
+            break
+        result.append(x)
+    return result
+
+
+def _l_drop_while(lst, args, line):
+    from quill.interpreter import CURRENT_INTERPRETER
+    from quill.values import is_truthy
+
+    _arity("drop_while", args, line, 1)
+    fn = args[0]
+    interp = CURRENT_INTERPRETER[0]
+    i = 0
+    while i < len(lst) and is_truthy(interp.call(fn, [lst[i]], line)):
+        i += 1
+    return lst[i:]
+
+
+def _l_find(lst, args, line):
+    from quill.interpreter import CURRENT_INTERPRETER
+    from quill.values import is_truthy
+
+    _arity("find", args, line, 1)
+    fn = args[0]
+    interp = CURRENT_INTERPRETER[0]
+    for x in lst:
+        if is_truthy(interp.call(fn, [x], line)):
+            return x
+    return None
+
+
+def _l_find_index(lst, args, line):
+    from quill.interpreter import CURRENT_INTERPRETER
+    from quill.values import is_truthy
+
+    _arity("find_index", args, line, 1)
+    fn = args[0]
+    interp = CURRENT_INTERPRETER[0]
+    for i, x in enumerate(lst):
+        if is_truthy(interp.call(fn, [x], line)):
+            return i
+    return -1
+
+
+def _l_partition(lst, args, line):
+    from quill.interpreter import CURRENT_INTERPRETER
+    from quill.values import is_truthy
+
+    _arity("partition", args, line, 1)
+    fn = args[0]
+    interp = CURRENT_INTERPRETER[0]
+    yes, no = [], []
+    for x in lst:
+        (yes if is_truthy(interp.call(fn, [x], line)) else no).append(x)
+    return [yes, no]
+
+
+def _l_tally(lst, args, line):
+    _arity("tally", args, line, 0)
+    result = {}
+    for x in lst:
+        if not isinstance(x, (str, int, float, bool)):
+            raise RuntimeErr(f"tally() needs elements that are strings, numbers, or bools, not {type_name(x)}", line)
+        result[x] = result.get(x, 0) + 1
+    return result
+
+
+def _l_every(lst, args, line):
+    from quill.interpreter import CURRENT_INTERPRETER
+    from quill.values import is_truthy
+
+    _arity("every", args, line, 1)
+    fn = args[0]
+    interp = CURRENT_INTERPRETER[0]
+    return all(is_truthy(interp.call(fn, [x], line)) for x in lst)
+
+
+def _l_some(lst, args, line):
+    from quill.interpreter import CURRENT_INTERPRETER
+    from quill.values import is_truthy
+
+    _arity("some", args, line, 1)
+    fn = args[0]
+    interp = CURRENT_INTERPRETER[0]
+    return any(is_truthy(interp.call(fn, [x], line)) for x in lst)
+
+
+def _l_zip_with(lst, args, line):
+    from quill.interpreter import CURRENT_INTERPRETER
+
+    _arity("zip_with", args, line, 2)
+    other, fn = args
+    if not isinstance(other, list):
+        raise RuntimeErr(f"zip_with() expects a list, got {type_name(other)}", line)
+    interp = CURRENT_INTERPRETER[0]
+    return [interp.call(fn, [a, b], line) for a, b in zip(lst, other)]
+
+
+def _l_rotate(lst, args, line):
+    _arity("rotate", args, line, 1)
+    n = args[0]
+    if not isinstance(n, int) or isinstance(n, bool):
+        raise RuntimeErr("rotate() amount must be a whole number", line)
+    if not lst:
+        return []
+    n = n % len(lst)
+    return lst[n:] + lst[:n]
+
+
+def _l_shuffle(lst, args, line):
+    import random as _random
+
+    _arity("shuffle", args, line, 0)
+    result = list(lst)
+    _random.shuffle(result)
+    return result
+
+
+def _l_choice(lst, args, line):
+    import random as _random
+
+    _arity("choice", args, line, 0)
+    if not lst:
+        raise RuntimeErr("choice() on an empty list", line)
+    return _random.choice(lst)
+
+
 LIST_METHODS = {
     "push": _l_push,
     "pop": _l_pop,
@@ -515,6 +727,22 @@ LIST_METHODS = {
     "union": _l_union,
     "intersect": _l_intersect,
     "difference": _l_difference,
+    "take": _l_take,
+    "drop": _l_drop,
+    "take_last": _l_take_last,
+    "drop_last": _l_drop_last,
+    "take_while": _l_take_while,
+    "drop_while": _l_drop_while,
+    "find": _l_find,
+    "find_index": _l_find_index,
+    "partition": _l_partition,
+    "tally": _l_tally,
+    "every": _l_every,
+    "some": _l_some,
+    "zip_with": _l_zip_with,
+    "rotate": _l_rotate,
+    "shuffle": _l_shuffle,
+    "choice": _l_choice,
 }
 
 
@@ -580,6 +808,61 @@ def _m_setdefault(m, args, line):
     return m.setdefault(args[0], args[1])
 
 
+def _m_map_values(m, args, line):
+    from quill.interpreter import CURRENT_INTERPRETER
+
+    _arity("map_values", args, line, 1)
+    fn = args[0]
+    interp = CURRENT_INTERPRETER[0]
+    return {k: interp.call(fn, [v], line) for k, v in m.items()}
+
+
+def _m_merged(m, args, line):
+    _arity("merged", args, line, 1)
+    other = args[0]
+    if not isinstance(other, dict):
+        raise RuntimeErr(f"merged() expects a map, got {type_name(other)}", line)
+    result = dict(m)
+    result.update(other)
+    return result
+
+
+def _m_invert(m, args, line):
+    _arity("invert", args, line, 0)
+    result = {}
+    for k, v in m.items():
+        if not isinstance(v, (str, int, float, bool)):
+            raise RuntimeErr(f"invert() needs values that are strings, numbers, or bools, not {type_name(v)}", line)
+        result[v] = k
+    return result
+
+
+def _m_pick(m, args, line):
+    _arity("pick", args, line, 1)
+    keys = args[0]
+    if not isinstance(keys, list):
+        raise RuntimeErr(f"pick() expects a list of keys, got {type_name(keys)}", line)
+    return {k: m[k] for k in keys if k in m}
+
+
+def _m_omit(m, args, line):
+    _arity("omit", args, line, 1)
+    keys = args[0]
+    if not isinstance(keys, list):
+        raise RuntimeErr(f"omit() expects a list of keys, got {type_name(keys)}", line)
+    excluded = set(keys)
+    return {k: v for k, v in m.items() if k not in excluded}
+
+
+def _m_key_of(m, args, line):
+    _arity("key_of", args, line, 1)
+    target = args[0]
+    for k, v in m.items():
+        if quill_equals(v, target):
+            return k
+    return None
+
+
 MAP_METHODS = {
     "keys": _m_keys,
     "values": _m_values,
@@ -591,4 +874,10 @@ MAP_METHODS = {
     "copy": _m_copy,
     "update": _m_update,
     "setdefault": _m_setdefault,
+    "map_values": _m_map_values,
+    "merged": _m_merged,
+    "invert": _m_invert,
+    "pick": _m_pick,
+    "omit": _m_omit,
+    "key_of": _m_key_of,
 }

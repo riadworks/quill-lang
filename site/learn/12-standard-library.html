@@ -94,9 +94,26 @@
         <tr><td><code>hypot(x, y)</code></td><td>The hypotenuse of a right triangle with legs <code>x</code> and <code>y</code>.</td></tr>
         <tr><td><code>factorial(n)</code></td><td><code>n!</code>, for a non-negative whole number.</td></tr>
         <tr><td><code>gcd(a, b)</code></td><td>Greatest common divisor.</td></tr>
-        <tr><td><code>PI</code> / <code>E</code></td><td>The constants <code>3.141592653589793</code> and <code>2.718281828459045</code> (not functions — no parentheses).</td></tr>
+        <tr><td><code>PI</code> / <code>E</code> / <code>TAU</code></td><td>The constants <code>3.14159...</code>, <code>2.71828...</code>, and <code>6.28318...</code> (<code>2 * PI</code>) — not functions, no parentheses.</td></tr>
         <tr><td><code>INF</code> / <code>NAN</code></td><td>Infinity and not-a-number. <code>NAN == NAN</code> is <code>false</code>, same as everywhere else NaN shows up.</td></tr>
+        <tr><td><code>clamp(n, lo, hi)</code></td><td>Squeezes <code>n</code> into the <code>[lo, hi]</code> range.</td></tr>
+        <tr><td><code>lerp(a, b, t)</code></td><td>Linear interpolation between <code>a</code> and <code>b</code> — <code>t=0</code> gives <code>a</code>, <code>t=1</code> gives <code>b</code>.</td></tr>
+        <tr><td><code>sign(n)</code></td><td><code>-1</code>, <code>0</code>, or <code>1</code>.</td></tr>
+        <tr><td><code>is_even(n)</code> / <code>is_odd(n)</code></td><td>For a whole number.</td></tr>
       </table>
+
+      <h2>Statistics</h2>
+      <table class="ref">
+        <tr><th>Function</th><th>Does</th></tr>
+        <tr><td><code>mean(list)</code></td><td>Average.</td></tr>
+        <tr><td><code>median(list)</code></td><td>Middle value (average of the two middle values if the list has an even length).</td></tr>
+        <tr><td><code>mode(list)</code></td><td>Most common value.</td></tr>
+        <tr><td><code>variance(list)</code> / <code>stdev(list)</code></td><td><strong>Sample</strong> variance/standard deviation — needs at least 2 values.</td></tr>
+        <tr><td><code>percentile(list, p)</code></td><td>The value at percentile <code>p</code> (0-100), interpolating between the two closest data points.</td></tr>
+      </table>
+      <pre class="code-block"><span class="kw">let</span> latencies = [12, 15, 11, 40, 13, 14, 12]
+<span class="fnname">print</span>(mean(latencies))
+<span class="fnname">print</span>(percentile(latencies, 90))   <span class="cmt"># p90 - a realistic thing to want from real data</span></pre>
       <div class="callout">
         <span class="callout-label">Gotcha</span>
         <p>
@@ -172,9 +189,11 @@
       <h2>Hashing &amp; randomness</h2>
       <table class="ref">
         <tr><th>Function</th><th>Does</th></tr>
-        <tr><td><code>sha256(s)</code></td><td>Hex-encoded SHA-256 hash of a string.</td></tr>
+        <tr><td><code>sha256(s)</code> / <code>sha512(s)</code> / <code>sha1(s)</code> / <code>md5(s)</code></td><td>Hex-encoded hashes. Prefer <code>sha256</code>/<code>sha512</code>; <code>sha1</code>/<code>md5</code> exist for compatibility and checksums, not security.</td></tr>
+        <tr><td><code>hmac_sha256(key, message)</code></td><td>A keyed hash — signs <code>message</code> so only someone with <code>key</code> could have produced it. The right tool for a webhook signature or a signed token.</td></tr>
         <tr><td><code>password_hash(password)</code></td><td>Salted PBKDF2-HMAC-SHA256 hash, as a self-contained string.</td></tr>
         <tr><td><code>password_verify(password, hash)</code></td><td>Checks a password against a <code>password_hash()</code> result, using a constant-time comparison.</td></tr>
+        <tr><td><code>hex_encode(s)</code> / <code>hex_decode(s)</code></td><td>Round-trips a string through hex — a different thing from the numeric <code>hex(n)</code> from the math table above.</td></tr>
         <tr><td><code>random()</code></td><td>A float in <code>[0, 1)</code>.</td></tr>
         <tr><td><code>random_int(lo, hi)</code></td><td>A random integer, <strong>inclusive</strong> of both <code>lo</code> and <code>hi</code>.</td></tr>
         <tr><td><code>random_choice(list)</code></td><td>One random element.</td></tr>
@@ -231,7 +250,15 @@
         <tr><td><code>time()</code></td><td>The current Unix timestamp.</td></tr>
         <tr><td><code>sleep(seconds)</code></td><td>Pauses execution.</td></tr>
         <tr><td><code>base64_encode(s)</code> / <code>base64_decode(s)</code></td><td>Text-safe encoding, round-trippable.</td></tr>
+        <tr><td><code>date_format(timestamp, fmt)</code></td><td>A Unix timestamp to a human string, using <code>%Y</code>/<code>%m</code>/<code>%d</code>-style codes (the same ones Python's <code>strftime</code> uses).</td></tr>
+        <tr><td><code>date_parse(text, fmt)</code></td><td>The reverse — a formatted date string back to a Unix timestamp.</td></tr>
+        <tr><td><code>args()</code></td><td>Whatever was typed after the script's filename on the command line, as a list of strings.</td></tr>
+        <tr><td><code>platform()</code></td><td><code>"Windows"</code>, <code>"Linux"</code>, or <code>"Darwin"</code> (macOS).</td></tr>
+        <tr><td><code>text_wrap(s, width)</code></td><td>Wraps text into a list of lines no wider than <code>width</code>.</td></tr>
+        <tr><td><code>sample(list, n)</code></td><td><code>n</code> random elements, no repeats (unlike <code>random_choice</code>, called once).</td></tr>
       </table>
+      <pre class="code-block"><span class="fnname">print</span>(date_format(time(), <span class="str">"%Y-%m-%d %H:%M"</span>))
+<span class="fnname">print</span>(args())   <span class="cmt"># run as `quill script.ql build --verbose` -&gt; ["build", "--verbose"]</span></pre>
 
       <h2>Program control &amp; safety</h2>
       <table class="ref">

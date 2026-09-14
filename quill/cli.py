@@ -15,7 +15,7 @@ def run_source(source: str, interp: Interpreter, env: Environment):
     interp.run(program)
 
 
-def run_file(path: str) -> int:
+def run_file(path: str, script_args=None) -> int:
     try:
         with open(path, "r", encoding="utf-8") as f:
             source = f.read()
@@ -23,7 +23,7 @@ def run_file(path: str) -> int:
         print(f"Error: cannot open '{path}': {exc.strerror}", file=sys.stderr)
         return 1
 
-    env = build_globals()
+    env = build_globals(script_args)
     interp = Interpreter(env)
     interp.current_dir = os.path.dirname(os.path.abspath(path))
     try:
@@ -85,9 +85,9 @@ def main(argv=None) -> int:
     if not argv:
         return repl()
     if argv[0] in ("-h", "--help"):
-        print("usage: quill [script.ql]   (no script = start the REPL)")
+        print("usage: quill [script.ql] [args...]   (no script = start the REPL)")
         return 0
-    return run_file(argv[0])
+    return run_file(argv[0], argv[1:])
 
 
 if __name__ == "__main__":
