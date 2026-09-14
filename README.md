@@ -211,17 +211,29 @@ Paths are resolved relative to the importing file.
 `keys`, `values`, `items`, `has`, `sorted`, `sum`, `min`, `max`, `abs`,
 `round`, `slice`, `sqrt`, `floor`, `ceil`, `enumerate`, `zip`, `read_file`,
 `write_file`, `file_exists`, `serve`, `url_encode`, `json_encode`,
-`json_decode`, `sha256`, `random`, `random_int`, `random_choice`, `shuffle`,
-`env_get`, `http_get`, `http_post`, plus the constant `PI`. (The older top-level `push`/`pop`/`keys`/etc.
+`json_decode`, `sha256`, `password_hash`, `password_verify`, `random`,
+`random_int`, `random_choice`, `shuffle`, `env_get`, `http_get`, `http_post`,
+plus the constant `PI`. (The older top-level `push`/`pop`/`keys`/etc.
 and the newer `.push()`/`.pop()`/`.keys()` method forms both work and do the
 same thing — the methods are just nicer to chain.)
+
+`password_hash(password)` / `password_verify(password, hash)` are for real
+user passwords: salted PBKDF2-HMAC-SHA256 (260,000 iterations) with a
+constant-time comparison, so two hashes of the same password never match
+each other and a timing attack can't shortcut the check. `sha256()` is
+still the right tool for comparing a fixed, high-entropy secret like an
+API key (see `apps/website/`'s `/api/wipe` route) — it's just the wrong
+tool for a human-chosen password, which is exactly what
+`password_hash`/`password_verify` are for instead.
 
 `json_encode`/`json_decode` map directly onto Quill's own runtime values
 (lists, maps, strings, numbers, bools, nil are already exactly what Python's
 `json` module expects) - the one thing they can't handle is a class instance,
 which needs converting to a plain map first. `sha256` is there specifically
-so passwords/API keys never need to be compared or stored as plaintext - see
-`apps/website/`'s `/api/wipe` route for the actual pattern. `random`/
+so a fixed secret like an API key never needs to be compared or stored as
+plaintext - see `apps/website/`'s `/api/wipe` route for the actual pattern.
+(For an actual user-chosen password, use `password_hash`/`password_verify`
+instead - see the built-in functions list below for why.) `random`/
 `random_int`/`random_choice`/`shuffle` and `env_get` (for reading
 config/secrets from the environment instead of hardcoding them) round out
 what a real backend needs.
@@ -232,6 +244,17 @@ outbound side of the same story `serve()` covers inbound - both return
 `http_get()/http_post() failed: ...` error rather than a raw traceback when
 the host is unreachable. `http_post`'s `body` can be a map (form-encoded
 automatically, with `Content-Type` set to match) or a plain string.
+
+`serve()`'s request map also includes `cookies` (parsed from the `Cookie`
+header), and a handler's response map can set one back with `set_cookie`
+(a map of name to value) - each cookie goes out with `HttpOnly` and
+`SameSite=Lax` by default, so a session token isn't readable from
+client-side script and doesn't ride along on a basic cross-site request.
+If a handler raises an error, the visitor gets a plain "Internal Server
+Error" - the real exception goes to the server's own stderr instead, so a
+bug in a route never leaks file paths or internals to whoever triggered it.
+A request body over 10 MB is rejected with a 413 before it's ever read into
+memory.
 
 ## What's deliberately not here yet
 

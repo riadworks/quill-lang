@@ -144,17 +144,32 @@
       <table class="ref">
         <tr><th>Function</th><th>Does</th></tr>
         <tr><td><code>sha256(s)</code></td><td>Hex-encoded SHA-256 hash of a string.</td></tr>
+        <tr><td><code>password_hash(password)</code></td><td>Salted PBKDF2-HMAC-SHA256 hash, as a self-contained string.</td></tr>
+        <tr><td><code>password_verify(password, hash)</code></td><td>Checks a password against a <code>password_hash()</code> result, using a constant-time comparison.</td></tr>
         <tr><td><code>random()</code></td><td>A float in <code>[0, 1)</code>.</td></tr>
         <tr><td><code>random_int(lo, hi)</code></td><td>A random integer, <strong>inclusive</strong> of both <code>lo</code> and <code>hi</code>.</td></tr>
         <tr><td><code>random_choice(list)</code></td><td>One random element.</td></tr>
         <tr><td><code>shuffle(list)</code></td><td>A new shuffled list — the original is left untouched.</td></tr>
       </table>
       <p>
-        <code>sha256</code> exists specifically so a password or API key never has to be
-        stored or compared as plaintext: hash it once, and compare hashes from then on. See
-        <a href="14-building-real-programs.html">Lesson 14</a> for that pattern in a real
-        route.
+        <code>sha256</code> exists so a fixed, high-entropy secret — an API key, an admin
+        token — never has to be stored or compared as plaintext: hash it once, and compare
+        hashes from then on. See <a href="14-building-real-programs.html">Lesson 14</a> for
+        that pattern in a real route.
       </p>
+      <div class="callout">
+        <span class="callout-label">Gotcha</span>
+        <p>
+          <code>sha256</code> is the wrong tool for an actual user-chosen password: it's
+          fast and unsalted, which is exactly what makes it vulnerable to precomputed
+          rainbow tables and brute-force cracking once a database of hashes leaks. For a
+          real password, use <code>password_hash(password)</code> to store it and
+          <code>password_verify(password, hash)</code> to check a login attempt — both are
+          built on salted PBKDF2-HMAC-SHA256 with a constant-time comparison, so two hashes
+          of the same password never match each other and checking one can't be sped up by
+          timing how long the comparison takes.
+        </p>
+      </div>
       <div class="callout">
         <span class="callout-label">Gotcha</span>
         <p>

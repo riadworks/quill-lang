@@ -542,6 +542,25 @@ def test_sha256_is_deterministic_and_hex():
     assert lines[2] == "false"
 
 
+def test_password_hash_round_trips_and_rejects_wrong_password():
+    out = run(
+        'let h = password_hash("hunter2")\n'
+        'print(password_verify("hunter2", h))\n'
+        'print(password_verify("wrong", h))\n'
+    )
+    assert out.splitlines() == ["true", "false"]
+
+
+def test_password_hash_is_salted():
+    out = run('print(password_hash("hunter2") == password_hash("hunter2"))\n')
+    assert out.strip() == "false"
+
+
+def test_password_verify_rejects_malformed_hash_instead_of_crashing():
+    out = run('print(password_verify("hunter2", "not-a-real-hash"))\n')
+    assert out.strip() == "false"
+
+
 def test_random_int_stays_in_range():
     out = run(
         "let ok = true\n"

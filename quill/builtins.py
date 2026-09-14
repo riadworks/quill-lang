@@ -344,6 +344,45 @@ def build_globals() -> Environment:
             raise RuntimeErr(f"sha256() expects a string, got {type_name(text)}", line)
         return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
+    _PBKDF2_ITERATIONS = 260_000
+
+    def b_password_hash(args, line):
+        import binascii
+        import hashlib
+        import os
+
+        _arity("password_hash", args, line, 1)
+        password = args[0]
+        if not isinstance(password, str):
+            raise RuntimeErr(f"password_hash() expects a string, got {type_name(password)}", line)
+        salt = os.urandom(16)
+        digest = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt, _PBKDF2_ITERATIONS)
+        return (
+            f"pbkdf2_sha256${_PBKDF2_ITERATIONS}$"
+            f"{binascii.hexlify(salt).decode()}${binascii.hexlify(digest).decode()}"
+        )
+
+    def b_password_verify(args, line):
+        import binascii
+        import hashlib
+        import hmac
+
+        _arity("password_verify", args, line, 2)
+        password, stored = args
+        if not isinstance(password, str) or not isinstance(stored, str):
+            raise RuntimeErr("password_verify() expects two strings", line)
+        try:
+            algo, iterations_text, salt_hex, digest_hex = stored.split("$")
+            if algo != "pbkdf2_sha256":
+                return False
+            iterations = int(iterations_text)
+            salt = binascii.unhexlify(salt_hex)
+            expected = binascii.unhexlify(digest_hex)
+        except (ValueError, binascii.Error):
+            return False
+        actual = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt, iterations)
+        return hmac.compare_digest(actual, expected)
+
     def b_random(args, line):
         import random as _random
 
@@ -419,6 +458,8 @@ def build_globals() -> Environment:
     reg("json_encode", b_json_encode)
     reg("json_decode", b_json_decode)
     reg("sha256", b_sha256)
+    reg("password_hash", b_password_hash)
+    reg("password_verify", b_password_verify)
     reg("random", b_random)
     reg("random_int", b_random_int)
     reg("random_choice", b_random_choice)

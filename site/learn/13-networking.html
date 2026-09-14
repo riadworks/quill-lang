@@ -94,16 +94,40 @@ serve(8080, handler)</pre>
         <tr><td><code>query</code></td><td>Map of parsed <code>?key=value</code> query-string parameters.</td></tr>
         <tr><td><code>form</code></td><td>Map of parsed form fields, if the request body was <code>application/x-www-form-urlencoded</code>.</td></tr>
         <tr><td><code>body</code></td><td>The raw request body, always as a string.</td></tr>
+        <tr><td><code>cookies</code></td><td>Map of cookies parsed from the <code>Cookie</code> header.</td></tr>
       </table>
       <p>Your handler's return value becomes the response, in one of two shapes:</p>
       <table class="ref">
         <tr><th>Return value</th><th>Response</th></tr>
         <tr><td>A plain string</td><td>Status 200, that string as the body, <code>text/html</code>.</td></tr>
-        <tr><td>A map</td><td><code>status</code> (default 200, or 302 if <code>redirect</code> is set), <code>body</code> (default <code>""</code>), <code>content_type</code> (default <code>text/html</code>), and <code>redirect</code> (sets the <code>Location</code> header).</td></tr>
+        <tr><td>A map</td><td><code>status</code> (default 200, or 302 if <code>redirect</code> is set), <code>body</code> (default <code>""</code>), <code>content_type</code> (default <code>text/html</code>), <code>redirect</code> (sets the <code>Location</code> header), and <code>set_cookie</code> (a map of cookie name to value).</td></tr>
       </table>
       <p>
-        If a handler itself raises an error, the server doesn't crash — that one request
-        gets a generic 500 response, and the server keeps running for the next request.
+        If a handler itself raises an error, the server doesn't crash and the visitor
+        doesn't see the raw exception either — that request gets a plain "Internal Server
+        Error" response, the real error is printed to the server's own stderr for you to
+        see, and the server keeps running for the next request. A request body over 10 MB
+        is also rejected outright (413) before it's read into memory, so a stray huge
+        upload can't exhaust the server's memory.
+      </p>
+
+      <h3>Cookies</h3>
+      <p>
+        A cookie set through <code>set_cookie</code> goes out with <code>HttpOnly</code>
+        (client-side script can't read it, which blunts session theft via XSS) and
+        <code>SameSite=Lax</code> (blunts basic cross-site request forgery) by default:
+      </p>
+      <pre class="code-block"><span class="kw">pull</span> <span class="fnname">handler</span>(req):
+    <span class="kw">if</span> req[<span class="str">"cookies"</span>].has(<span class="str">"session"</span>):
+        <span class="kw">return</span> f<span class="str">"welcome back, session {req["cookies"]["session"]}"</span>
+    <span class="kw">let</span> token = sha256(str(random()))
+    <span class="kw">return</span> {<span class="str">"body"</span>: <span class="str">"logged in"</span>, <span class="str">"set_cookie"</span>: {<span class="str">"session"</span>: token}}
+
+serve(8080, handler)</pre>
+      <p>
+        There's no <code>Secure</code> flag on that cookie, deliberately — this server only
+        ever speaks plain HTTP, and a <code>Secure</code> cookie would simply never be sent
+        back to it.
       </p>
 
       <h3>A form handler</h3>
