@@ -6,12 +6,16 @@ Quill uses `pull` for function definitions instead of `def`/`fn`, and real f-str
 
 ## Install
 
-Not published to PyPI yet. From the project source folder:
+Not published to PyPI yet. Clone the repo and install from source:
 
 ```
+git clone https://github.com/riadworks/quill-lang.git
+cd quill-lang
 python -m venv .venv
 .venv\Scripts\pip install -e .
 ```
+
+Source: https://github.com/riadworks/quill-lang
 
 This provides a `quill` command: run with no arguments for a REPL, or `quill script.ql` to run a file.
 
