@@ -1,0 +1,118 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Quill",
+  "scopeName": "source.quill",
+  "fileTypes": ["ql"],
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#strings" },
+    { "include": "#numbers" },
+    { "include": "#class-declaration" },
+    { "include": "#function-declaration" },
+    { "include": "#keywords" },
+    { "include": "#constants" },
+    { "include": "#operators" }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        { "name": "comment.line.number-sign.quill", "match": "#.*$" }
+      ]
+    },
+    "numbers": {
+      "patterns": [
+        {
+          "name": "constant.numeric.quill",
+          "match": "\\b\\d+(\\.\\d+)?([eE][+-]?\\d+)?\\b"
+        }
+      ]
+    },
+    "keywords": {
+      "patterns": [
+        {
+          "name": "keyword.control.quill",
+          "match": "\\b(if|elif|else|while|for|in|return|break|continue|try|except|finally|raise|import|as)\\b"
+        },
+        {
+          "name": "keyword.operator.logical.quill",
+          "match": "\\b(and|or|not)\\b"
+        },
+        {
+          "name": "keyword.other.quill",
+          "match": "\\blet\\b"
+        },
+        {
+          "name": "storage.type.class.quill",
+          "match": "\\bclass\\b"
+        },
+        {
+          "name": "storage.type.function.quill",
+          "match": "\\bpull\\b"
+        },
+        {
+          "name": "variable.language.quill",
+          "match": "\\b(self|super)\\b"
+        }
+      ]
+    },
+    "constants": {
+      "patterns": [
+        { "name": "constant.language.quill", "match": "\\b(true|false|nil)\\b" }
+      ]
+    },
+    "class-declaration": {
+      "match": "\\b(class)\\s+([A-Za-z_][A-Za-z0-9_]*)",
+      "captures": {
+        "1": { "name": "storage.type.class.quill" },
+        "2": { "name": "entity.name.type.class.quill" }
+      }
+    },
+    "function-declaration": {
+      "match": "\\b(pull)\\s+([A-Za-z_][A-Za-z0-9_]*)",
+      "captures": {
+        "1": { "name": "storage.type.function.quill" },
+        "2": { "name": "entity.name.function.quill" }
+      }
+    },
+    "operators": {
+      "patterns": [
+        {
+          "name": "keyword.operator.quill",
+          "match": "(\\*\\*|//|==|!=|<=|>=|\\+=|-=|\\*=|/=|[+\\-*/%<>=])"
+        }
+      ]
+    },
+    "strings": {
+      "patterns": [
+        {
+          "name": "string.quoted.double.interpolated.quill",
+          "begin": "f\"",
+          "end": "\"",
+          "beginCaptures": { "0": { "name": "punctuation.definition.string.begin.quill" } },
+          "endCaptures": { "0": { "name": "punctuation.definition.string.end.quill" } },
+          "patterns": [
+            { "name": "constant.character.escape.quill", "match": "\\\\." },
+            {
+              "name": "meta.embedded.line.quill",
+              "begin": "\\{",
+              "end": "\\}",
+              "beginCaptures": { "0": { "name": "punctuation.section.embedded.begin.quill" } },
+              "endCaptures": { "0": { "name": "punctuation.section.embedded.end.quill" } },
+              "patterns": [{ "include": "$self" }]
+            }
+          ]
+        },
+        {
+          "name": "string.quoted.double.quill",
+          "begin": "\"",
+          "end": "\"",
+          "beginCaptures": { "0": { "name": "punctuation.definition.string.begin.quill" } },
+          "endCaptures": { "0": { "name": "punctuation.definition.string.end.quill" } },
+          "patterns": [
+            { "name": "constant.character.escape.quill", "match": "\\\\." }
+          ]
+        }
+      ]
+    }
+  }
+}

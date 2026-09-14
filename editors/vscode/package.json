@@ -1,0 +1,26 @@
+{
+  "name": "quill-lang",
+  "displayName": "Quill Language Support",
+  "description": "Syntax highlighting for the Quill programming language (.ql files).",
+  "version": "0.1.0",
+  "publisher": "quill-lang",
+  "engines": { "vscode": "^1.60.0" },
+  "categories": ["Programming Languages"],
+  "contributes": {
+    "languages": [
+      {
+        "id": "quill",
+        "aliases": ["Quill", "quill"],
+        "extensions": [".ql"],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "quill",
+        "scopeName": "source.quill",
+        "path": "./syntaxes/quill.tmLanguage.json"
+      }
+    ]
+  }
+}

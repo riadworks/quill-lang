@@ -31,6 +31,7 @@ This provides a `quill` command: run with no arguments for a REPL, or `quill scr
 - A standard library covering strings, lists, maps, JSON, CSV, SHA-256/512/1, MD5, HMAC-SHA256, salted PBKDF2 password hashing, regular expressions, UUIDs, base64/hex encoding, HTML/URL escaping, filesystem access, bitwise operations, `assert`/`exit`, `deep_copy`, type predicates, basic statistics (`mean`/`median`/`mode`/`variance`/`stdev`/`percentile`), date formatting, randomness, file I/O, and Python-style top-level helpers (`map`/`filter`/`reduce`, `all`/`any`, `chr`/`ord`, `hex`/`oct`/`bin`, `pow`/`divmod`, a full trig/log math set, `gcd`/`factorial`) - plus dozens of list/map/string utility methods (`take`/`drop`/`partition`/`tally`/`group_by`/`pick`/`omit`/`to_snake_case`/etc.)
 - `args()` exposes a script's own command-line arguments (`quill script.ql foo bar` -> `["foo", "bar"]` inside the script)
 - Full filesystem toolkit (`copy_file`/`move_file`/`file_size`/`delete_dir` alongside the existing read/write/list/make), `env_all()`, and `levenshtein()` string edit-distance
+- Developer tooling: `quill fmt` (an indentation-normalizing formatter), `quill lsp` (a minimal language server providing live syntax-error diagnostics), and an unpublished VS Code extension for syntax highlighting under `editors/vscode/`
 
 ## What's not implemented
 

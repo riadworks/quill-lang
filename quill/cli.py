@@ -4,6 +4,7 @@ import sys
 from quill.builtins import build_globals
 from quill.environment import Environment
 from quill.errors import QuillError
+from quill.formatter import format_source
 from quill.interpreter import Interpreter
 from quill.lexer import tokenize
 from quill.parser import parse
@@ -80,13 +81,64 @@ def _unbalanced(source: str) -> bool:
     return depth > 0
 
 
+def cmd_fmt(argv) -> int:
+    check_only = "--check" in argv
+    paths = [a for a in argv if a != "--check"]
+    if not paths:
+        print("usage: quill fmt <file.ql> [file2.ql ...] [--check]", file=sys.stderr)
+        return 1
+
+    any_would_change = False
+    for path in paths:
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                original = f.read()
+        except OSError as exc:
+            print(f"Error: cannot open '{path}': {exc.strerror}", file=sys.stderr)
+            return 1
+        try:
+            formatted = format_source(original)
+        except QuillError as exc:
+            print(f"Error: {path}: {exc.message}" + (f" (line {exc.line})" if exc.line else ""), file=sys.stderr)
+            return 1
+
+        if formatted == original:
+            if check_only:
+                print(f"{path}: already formatted")
+            continue
+
+        any_would_change = True
+        if check_only:
+            print(f"{path}: would reformat")
+        else:
+            with open(path, "w", encoding="utf-8") as f:
+                f.write(formatted)
+            print(f"{path}: reformatted")
+
+    return 1 if (check_only and any_would_change) else 0
+
+
+def cmd_lsp(argv) -> int:
+    from quill.lsp import run_server
+
+    return run_server()
+
+
 def main(argv=None) -> int:
     argv = argv if argv is not None else sys.argv[1:]
     if not argv:
         return repl()
     if argv[0] in ("-h", "--help"):
-        print("usage: quill [script.ql] [args...]   (no script = start the REPL)")
+        print(
+            "usage: quill [script.ql] [args...]   (no script = start the REPL)\n"
+            "       quill fmt <file.ql> [file2.ql ...] [--check]\n"
+            "       quill lsp"
+        )
         return 0
+    if argv[0] == "fmt":
+        return cmd_fmt(argv[1:])
+    if argv[0] == "lsp":
+        return cmd_lsp(argv[1:])
     return run_file(argv[0], argv[1:])
 
 

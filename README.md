@@ -25,7 +25,32 @@ project's README for the full pipx walkthrough if you want that).
 quill                       # start the REPL
 quill script.ql             # run a script
 quill script.ql foo bar     # run a script - "foo" and "bar" show up as args() inside it
+quill fmt script.ql         # normalize its indentation in place
+quill fmt script.ql --check # report whether it would change anything, without writing
+quill lsp                   # run the language server (stdio) for editor integration
 ```
+
+## Tooling
+
+- **Formatter**: `quill fmt <file.ql>` normalizes indentation to 4 spaces per
+  level. It deliberately doesn't rewrite spacing, operator style, or line
+  breaks - Quill's lexer discards comments rather than keeping them as
+  tokens, so a full pretty-printer that rebuilds source from the AST would
+  silently delete every comment in the file. Working at the token-stream
+  level instead (reusing the real lexer's own INDENT/DEDENT tracking, then
+  rewriting only each line's leading whitespace) fixes the most common real
+  complaint - inconsistent indentation, tabs vs. spaces - without that risk.
+  `--check` reports what would change without writing anything.
+- **LSP**: `quill lsp` is a minimal language server (stdio, real
+  Content-Length-framed JSON-RPC) providing exactly one thing - live
+  syntax-error diagnostics from the same parser every script run already
+  goes through. Point any editor's generic LSP client at the command
+  `quill lsp` for `.ql` files.
+- **Editor support**: [`editors/vscode/`](editors/vscode/) is a small,
+  unpublished VS Code extension providing real syntax highlighting (a
+  TextMate grammar covering keywords, `pull`/`class` declarations, strings,
+  f-string interpolation, and comments) - see its README for installing it
+  without the Marketplace, and for wiring the LSP into the same editor.
 
 ## The language
 
@@ -391,7 +416,10 @@ quill/
                      # bound methods) and formatting/equality helpers
   methods.py        # built-in method tables for strings/lists/maps
   builtins.py       # top-level built-in functions
-  cli.py            # `quill script.ql` / `quill` REPL
+  cli.py            # `quill script.ql` / `quill` REPL / `quill fmt` / `quill lsp`
+  formatter.py      # `quill fmt` - indentation normalizer
+  lsp.py            # `quill lsp` - minimal language server (diagnostics only)
+editors/vscode/     # unpublished VS Code extension: syntax highlighting + LSP wiring
 examples/           # hello, fib, closures, collections, fizzbuzz, classes,
                      # exceptions, methods_and_ops, mathutils + import_demo
 apps/tasks/         # a real CLI app, built to prove the language - see below
