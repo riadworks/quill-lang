@@ -1,4 +1,98 @@
-<title>Quill</title>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quill: A General-Purpose Programming Language</title>
+<meta name="description" content="Quill is a small, general-purpose programming language with classes, exceptions, closures, a module system, and its own web server.">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#14161d">
+<link rel="canonical" href="https://quill-lang.example/">
+
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+
+<meta property="og:type" content="website">
+<meta property="og:title" content="Quill: A General-Purpose Programming Language">
+<meta property="og:description" content="Classes, exceptions, closures, a module system, and its own web server. Syntax meant to be read at a glance.">
+<meta property="og:image" content="https://quill-lang.example/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="https://quill-lang.example/">
+<meta property="og:site_name" content="Quill">
+
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Quill: A General-Purpose Programming Language">
+<meta name="twitter:description" content="Classes, exceptions, closures, a module system, and its own web server. Syntax meant to be read at a glance.">
+<meta name="twitter:image" content="https://quill-lang.example/og-image.png">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Quill",
+  "applicationCategory": "DeveloperApplication",
+  "operatingSystem": "Windows, macOS, Linux",
+  "description": "A small, general-purpose programming language with classes, exceptions, closures, a module system, and its own web server.",
+  "url": "https://quill-lang.example/",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD"
+  }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "What does Quill look like day to day?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Python-style indentation instead of braces, a pull keyword for functions, and real f-strings: f\"hi {name}\" interpolates, plain \"hi {name}\" never does."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Do I need Python installed to use it?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "For this build, yes: Quill's reference implementation is a tree-walking interpreter written in Python. A separate Rust port exists with the same language and no Python runtime required, at the cost of being a second codebase to keep in sync."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Is it fast?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "It's a tree-walking interpreter, so it optimizes for reading and writing code, not raw throughput. If speed matters more than that tradeoff, the Rust build compiles to a native binary."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can I actually build something with it, or is it just a toy grammar?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "A handful of real, working apps ship with the project: a persistent CLI task manager, the same task manager as a website with a JSON API, a URL shortener, a text adventure, a password generator, and a number-guessing game."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What's missing?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Multiple inheritance, reflected operators, a package manager, async/concurrency, and static typing are all left out for now, on purpose, to keep what exists solid rather than spreading thinner."
+      }
+    }
+  ]
+}
+</script>
+
 <style>
   :root {
     --bg: #ffffff;
@@ -134,20 +228,22 @@
     gap: 16px; flex-wrap: wrap; font-size: 13px; color: var(--muted);
   }
 </style>
+</head>
+<body>
 
 <div class="top">
   <header class="site">
     <div class="wrap">
       <div class="brand">
         <span class="mark">
-          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
             <path d="M20.5 3.5C14 3.5 6 9 3.5 20.5c9.5-1.5 15.5-7 17-13.5" stroke="#fff" stroke-width="1.9" stroke-linecap="round"/>
             <path d="M3.5 20.5L9 15" stroke="#fff" stroke-width="1.9" stroke-linecap="round"/>
           </svg>
         </span>
         Quill
       </div>
-      <nav class="site">
+      <nav class="site" aria-label="Primary">
         <a href="#features">Features</a>
         <a href="#install">Install</a>
         <a href="#faq">FAQ</a>
@@ -166,15 +262,15 @@
       </p>
       <div class="cta-row">
         <a class="btn-primary" href="#install">Get started</a>
-        <div class="cmd-box"><span class="prompt">$</span> quill</div>
+        <div class="cmd-box"><span class="prompt" aria-hidden="true">$</span> quill</div>
       </div>
     </div>
   </section>
 
-  <section class="split" id="features">
+  <section class="split" id="features" aria-labelledby="features-heading">
     <div class="wrap">
       <div>
-        <h2>Code example</h2>
+        <h2 id="features-heading">Code example</h2>
         <pre class="code-sample"><span class="kw">class</span> <span class="cls">Task</span>:
     <span class="kw">pull</span> <span class="fnname">init</span>(title):
         self.title = title
@@ -207,13 +303,13 @@
   </section>
 </div>
 
-<section class="install" id="install">
+<section class="install" id="install" aria-labelledby="install-heading">
   <div class="wrap">
-    <h2 class="section-title">Install</h2>
+    <h2 class="section-title" id="install-heading">Install</h2>
     <p class="section-lede">Quill isn't on PyPI yet, so it installs from the source folder. Needs Python 3.10 or newer.</p>
     <div class="steps">
       <div class="step">
-        <span class="n">1</span>
+        <span class="n" aria-hidden="true">1</span>
         <div>
           <p>From inside the project folder, create a virtual environment and install it:</p>
           <pre>python -m venv .venv
@@ -221,7 +317,7 @@
         </div>
       </div>
       <div class="step">
-        <span class="n">2</span>
+        <span class="n" aria-hidden="true">2</span>
         <div>
           <p>That gives you a <code>quill</code> command. Run it with no arguments for a REPL, or point it at a script:</p>
           <pre>quill
@@ -229,7 +325,7 @@ quill script.ql</pre>
         </div>
       </div>
       <div class="step">
-        <span class="n">3</span>
+        <span class="n" aria-hidden="true">3</span>
         <div>
           <p>Want it on your PATH from any terminal instead of just an activated venv? Install it with <code>pipx</code> instead:</p>
           <pre>pipx install .</pre>
@@ -239,9 +335,9 @@ quill script.ql</pre>
   </div>
 </section>
 
-<section class="faq" id="faq">
+<section class="faq" id="faq" aria-labelledby="faq-heading">
   <div class="wrap">
-    <h2 class="section-title">FAQ</h2>
+    <h2 class="section-title" id="faq-heading">FAQ</h2>
     <div class="faq-list">
       <div class="faq-item">
         <h3>What does Quill look like day to day?</h3>
@@ -273,3 +369,6 @@ quill script.ql</pre>
     <span>a small language for building real things</span>
   </div>
 </footer>
+
+</body>
+</html>

@@ -1,0 +1,35 @@
+# Quill
+
+> Quill is a small, general-purpose programming language with classes, exceptions, closures, a module system, and its own web server. Python-style indentation, dynamically typed, implemented as a tree-walking interpreter (reference build in Python; a separate Rust port exists with no Python runtime required).
+
+Quill uses `pull` for function definitions instead of `def`/`fn`, and real f-strings: `f"hi {name}"` interpolates, plain `"hi {name}"` never does.
+
+## Install
+
+Not published to PyPI yet. From the project source folder:
+
+```
+python -m venv .venv
+.venv\Scripts\pip install -e .
+```
+
+This provides a `quill` command: run with no arguments for a REPL, or `quill script.ql` to run a file.
+
+## What's implemented
+
+- Classes with single inheritance, `super.method()` resolving correctly through deep chains
+- Exceptions: `try` / `except` / `finally`, catching both user `raise`s and built-in runtime errors
+- Closures and first-class functions
+- A module system (`import "file.ql" as name`)
+- Operator overloading via dunder methods (`__add__`, `__eq__`, `__str__`, etc.)
+- List/map comprehensions and destructuring assignment
+- A built-in web server (`serve(port, handler)`) and an outbound HTTP client (`http_get`/`http_post`)
+- A standard library covering strings, lists, maps, JSON, SHA-256, randomness, and file I/O
+
+## What's not implemented
+
+Multiple inheritance, reflected operators (`__radd__`-style), a package manager, async/concurrency, and static typing.
+
+## Real programs built with it
+
+A persistent CLI task manager, the same task manager as a website with a JSON API, a URL shortener, a text adventure, a password generator, and a number-guessing game - all shipped with the project's source.
