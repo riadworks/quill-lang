@@ -106,7 +106,7 @@ python -m venv .venv
       <p><code>if</code>/<code>elif</code>/<code>else</code>, <code>while</code>, <code>for</code>-<code>in</code> over lists, strings, maps, and ranges, plus <code>break</code> and <code>continue</code>.</p>
 
       <h3><a href="05-functions-and-closures.html">5. Functions &amp; Closures</a></h3>
-      <p><code>pull</code>, parameters and returns, functions as values, anonymous functions, and closures that capture and mutate an enclosing variable.</p>
+      <p><code>pull</code>, parameters and returns (including defaults — evaluated fresh per call, so no Python-style shared-mutable-default surprise), functions as values, anonymous functions, and closures that capture and mutate an enclosing variable.</p>
 
       <h3><a href="06-lists-and-maps.html">6. Lists &amp; Maps</a></h3>
       <p>Literals, indexing, every built-in method, destructuring assignment, and list/map comprehensions.</p>
@@ -127,7 +127,7 @@ python -m venv .venv
       <p>Splitting a program across files with <code>import "file.ql" as name</code>, and how module namespaces actually work under the hood.</p>
 
       <h3><a href="12-standard-library.html">12. Standard Library</a></h3>
-      <p>Every built-in function, grouped by what it's for: math, collections, files, JSON, hashing, randomness, and environment variables.</p>
+      <p>Every built-in function, grouped by what it's for: math and statistics, collections, files, JSON/CSV, hashing and encoding, regular expressions, bitwise operations, type predicates, program control (<code>assert</code>/<code>exit</code>), and more.</p>
 
       <h3><a href="13-networking.html">13. Networking</a></h3>
       <p>Serving real HTTP requests with <code>serve()</code>, and making outbound requests with <code>http_get</code>/<code>http_post</code> — building a tiny web app end to end.</p>

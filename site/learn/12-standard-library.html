@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>The Quill Standard Library</title>
-<meta name="description" content="Every built-in function in Quill, grouped by category: math, collections, files, JSON, hashing, randomness, and environment variables.">
+<meta name="description" content="Every built-in function in Quill, grouped by category: math and statistics, collections, files, JSON/CSV, hashing and encoding, regular expressions, bitwise operations, type predicates, and more.">
 <meta name="robots" content="index, follow">
 <meta name="theme-color" content="#14161d">
 <link rel="canonical" href="https://quill-lang.example/learn/12-standard-library.html">
@@ -14,7 +14,7 @@
 <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
 <meta property="og:type" content="article">
 <meta property="og:title" content="The Quill Standard Library">
-<meta property="og:description" content="Every built-in function, grouped by category, with arities and examples.">
+<meta property="og:description" content="Every built-in function, grouped by category: math and statistics, collections, files, JSON/CSV, hashing and encoding, regular expressions, bitwise operations, type predicates, and more.">
 <meta property="og:url" content="https://quill-lang.example/learn/12-standard-library.html">
 <meta property="og:site_name" content="Quill">
 </head>
@@ -70,11 +70,31 @@
       <p class="lede">
         Every top-level built-in function, in one place, grouped by purpose. Several of
         these were already introduced where they were most relevant (control flow, lists,
-        maps) — this lesson is the reference version, plus everything that hasn't come up
-        yet: files, JSON, hashing, and randomness.
+        maps) — this lesson is the reference version, plus everything else: files, JSON
+        and CSV, hashing and encoding, regular expressions, bitwise operations, and more.
+        It's grown into the longest lesson in the course — jump straight to a section
+        instead of reading top to bottom:
+      </p>
+      <p style="font-size: 14px; line-height: 2;">
+        <a href="#math">Math</a> ·
+        <a href="#statistics">Statistics</a> ·
+        <a href="#collections">Collections</a> ·
+        <a href="#type-conversion">Type conversion</a> ·
+        <a href="#io">Input &amp; output</a> ·
+        <a href="#json">JSON</a> ·
+        <a href="#hashing">Hashing &amp; randomness</a> ·
+        <a href="#regex">Regular expressions</a> ·
+        <a href="#encoding">Identifiers, time &amp; encoding</a> ·
+        <a href="#control">Program control &amp; safety</a> ·
+        <a href="#predicates">Type predicates</a> ·
+        <a href="#web-formats">Web &amp; data formats</a> ·
+        <a href="#bitwise">Bitwise operations</a> ·
+        <a href="#environment">Environment</a> ·
+        <a href="#text-similarity">Text similarity</a> ·
+        <a href="#networking">Networking</a>
       </p>
 
-      <h2>Math</h2>
+      <h2 id="math">Math</h2>
       <table class="ref">
         <tr><th>Function</th><th>Does</th></tr>
         <tr><td><code>abs(n)</code></td><td>Absolute value.</td></tr>
@@ -102,7 +122,7 @@
         <tr><td><code>is_even(n)</code> / <code>is_odd(n)</code></td><td>For a whole number.</td></tr>
       </table>
 
-      <h2>Statistics</h2>
+      <h2 id="statistics">Statistics</h2>
       <table class="ref">
         <tr><th>Function</th><th>Does</th></tr>
         <tr><td><code>mean(list)</code></td><td>Average.</td></tr>
@@ -124,7 +144,7 @@
         </p>
       </div>
 
-      <h2>Collections</h2>
+      <h2 id="collections">Collections</h2>
       <p>Covered in full in <a href="06-lists-and-maps.html">Lesson 6</a> — the standalone forms, for reference:</p>
       <table class="ref">
         <tr><th>Function</th><th>Does</th></tr>
@@ -144,7 +164,7 @@
 <span class="fnname">print</span>(sorted(people, <span class="kw">pull</span>(p): <span class="kw">return</span> p[<span class="str">"age"</span>]))   <span class="cmt"># sorted by age, ascending</span>
 <span class="fnname">print</span>(map(<span class="kw">pull</span>(x): <span class="kw">return</span> x * x, [1, 2, 3]))     <span class="cmt"># [1, 4, 9]</span></pre>
 
-      <h2>Type conversion &amp; inspection</h2>
+      <h2 id="type-conversion">Type conversion &amp; inspection</h2>
       <p><code>type(v)</code>, <code>str(v)</code>, <code>num(v)</code>, <code>bool(v)</code> are covered in <a href="02-variables-and-types.html">Lesson 2</a>. A few more:</p>
       <table class="ref">
         <tr><th>Function</th><th>Does</th></tr>
@@ -153,7 +173,7 @@
         <tr><td><code>hex(n)</code> / <code>oct(n)</code> / <code>bin(n)</code></td><td>Number to a <code>"0x.."</code>/<code>"0o.."</code>/<code>"0b.."</code> string.</td></tr>
       </table>
 
-      <h2>Input &amp; output</h2>
+      <h2 id="io">Input &amp; output</h2>
       <table class="ref">
         <tr><th>Function</th><th>Does</th></tr>
         <tr><td><code>print(...)</code></td><td>Any number of arguments, space-joined, each converted with <code>str()</code>.</td></tr>
@@ -177,7 +197,7 @@
         spins forever once a piped input file is exhausted.
       </p>
 
-      <h2>JSON</h2>
+      <h2 id="json">JSON</h2>
       <table class="ref">
         <tr><th>Function</th><th>Does</th></tr>
         <tr><td><code>json_encode(v)</code> / <code>json_encode(v, pretty)</code></td><td>Serializes a string/number/bool/nil/list/map to a JSON string. <code>pretty</code> (any truthy value) indents it.</td></tr>
@@ -189,7 +209,7 @@
         or class itself; convert an instance to a plain map first if you need to serialize it.
       </p>
 
-      <h2>Hashing &amp; randomness</h2>
+      <h2 id="hashing">Hashing &amp; randomness</h2>
       <table class="ref">
         <tr><th>Function</th><th>Does</th></tr>
         <tr><td><code>sha256(s)</code> / <code>sha512(s)</code> / <code>sha1(s)</code> / <code>md5(s)</code></td><td>Hex-encoded hashes. Prefer <code>sha256</code>/<code>sha512</code>; <code>sha1</code>/<code>md5</code> exist for compatibility and checksums, not security.</td></tr>
@@ -232,7 +252,7 @@
         </p>
       </div>
 
-      <h2>Regular expressions</h2>
+      <h2 id="regex">Regular expressions</h2>
       <table class="ref">
         <tr><th>Function</th><th>Does</th></tr>
         <tr><td><code>regex_match(pattern, s)</code></td><td>Whether <code>pattern</code> matches anywhere in <code>s</code>.</td></tr>
@@ -246,7 +266,7 @@
       <pre class="code-block"><span class="fnname">print</span>(regex_find_all(<span class="str">"[0-9]+"</span>, <span class="str">"order #123, qty 456"</span>))   <span class="cmt"># ["123", "456"]</span>
 <span class="fnname">print</span>(regex_groups(<span class="str">"(\\w+)@(\\w+)"</span>, <span class="str">"bob@example"</span>))       <span class="cmt"># ["bob", "example"]</span></pre>
 
-      <h2>Identifiers, time &amp; encoding</h2>
+      <h2 id="encoding">Identifiers, time &amp; encoding</h2>
       <table class="ref">
         <tr><th>Function</th><th>Does</th></tr>
         <tr><td><code>uuid()</code></td><td>A random UUID4 string.</td></tr>
@@ -263,7 +283,7 @@
       <pre class="code-block"><span class="fnname">print</span>(date_format(time(), <span class="str">"%Y-%m-%d %H:%M"</span>))
 <span class="fnname">print</span>(args())   <span class="cmt"># run as `quill script.ql build --verbose` -&gt; ["build", "--verbose"]</span></pre>
 
-      <h2>Program control &amp; safety</h2>
+      <h2 id="control">Program control &amp; safety</h2>
       <table class="ref">
         <tr><th>Function</th><th>Does</th></tr>
         <tr><td><code>assert(cond, [message])</code></td><td>Raises a catchable error if <code>cond</code> is falsy — the function form of Python's <code>assert</code> statement, so it works as an expression too.</td></tr>
@@ -271,7 +291,7 @@
         <tr><td><code>deep_copy(v)</code></td><td>Recursively copies nested lists/maps — a plain <code>.copy()</code> only copies one level deep.</td></tr>
       </table>
 
-      <h2>Type predicates</h2>
+      <h2 id="predicates">Type predicates</h2>
       <p>Readable shorthands for <code>type(v) == "..."</code>:</p>
       <table class="ref">
         <tr><th>Function</th><th>True when <code>v</code> is a...</th></tr>
@@ -285,7 +305,7 @@
         <tr><td><code>is_class(v)</code></td><td>class itself (not an instance of one)</td></tr>
       </table>
 
-      <h2>Web &amp; data formats</h2>
+      <h2 id="web-formats">Web &amp; data formats</h2>
       <table class="ref">
         <tr><th>Function</th><th>Does</th></tr>
         <tr><td><code>url_decode(s)</code></td><td>The inverse of <code>url_encode(s)</code>.</td></tr>
@@ -294,7 +314,7 @@
         <tr><td><code>csv_stringify(rows)</code></td><td>A list of rows back to CSV text.</td></tr>
       </table>
 
-      <h2>Bitwise operations</h2>
+      <h2 id="bitwise">Bitwise operations</h2>
       <p>Quill has no <code>&amp;</code>/<code>|</code>/<code>^</code>/<code>~</code>/<code>&lt;&lt;</code>/<code>&gt;&gt;</code> operators — these functions cover the same ground:</p>
       <table class="ref">
         <tr><th>Function</th><th>Does</th></tr>
@@ -303,21 +323,21 @@
         <tr><td><code>bit_shift_left(a, n)</code> / <code>bit_shift_right(a, n)</code></td><td>Shifts <code>a</code> by <code>n</code> bits.</td></tr>
       </table>
 
-      <h2>Environment</h2>
+      <h2 id="environment">Environment</h2>
       <table class="ref">
         <tr><th>Function</th><th>Does</th></tr>
         <tr><td><code>env_get(name)</code> / <code>env_get(name, default)</code></td><td>Reads an environment variable, for config/secrets instead of hardcoding them.</td></tr>
         <tr><td><code>env_all()</code></td><td>Every environment variable, as a map.</td></tr>
       </table>
 
-      <h2>Text similarity</h2>
+      <h2 id="text-similarity">Text similarity</h2>
       <table class="ref">
         <tr><th>Function</th><th>Does</th></tr>
         <tr><td><code>levenshtein(a, b)</code></td><td>The number of single-character edits (insert, delete, substitute) needed to turn <code>a</code> into <code>b</code> — the classic edit-distance algorithm, useful for fuzzy matching or a "did you mean...?" suggestion.</td></tr>
       </table>
       <pre class="code-block"><span class="fnname">print</span>(levenshtein(<span class="str">"kitten"</span>, <span class="str">"sitting"</span>))   <span class="cmt"># 3</span></pre>
 
-      <h2>Networking</h2>
+      <h2 id="networking">Networking</h2>
       <p>
         <code>serve(port, handler)</code>, <code>http_get</code>, <code>http_post</code>,
         and <code>url_encode</code> get their own full lesson next, since they're worth
