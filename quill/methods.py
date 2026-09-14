@@ -171,6 +171,38 @@ def _s_is_space(s, args, line):
     return s.isspace()
 
 
+def _s_center(s, args, line):
+    _arity("center", args, line, 1, 2)
+    width = int(_require_num("center", args[0], line))
+    fill = args[1] if len(args) == 2 else " "
+    if not isinstance(fill, str) or len(fill) != 1:
+        raise RuntimeErr("center() fill must be a single character", line)
+    return s.center(width, fill)
+
+
+def _s_zfill(s, args, line):
+    _arity("zfill", args, line, 1)
+    width = int(_require_num("zfill", args[0], line))
+    return s.zfill(width)
+
+
+def _s_remove_prefix(s, args, line):
+    _arity("remove_prefix", args, line, 1)
+    prefix = args[0]
+    return s[len(prefix):] if prefix and s.startswith(prefix) else s
+
+
+def _s_remove_suffix(s, args, line):
+    _arity("remove_suffix", args, line, 1)
+    suffix = args[0]
+    return s[: -len(suffix)] if suffix and s.endswith(suffix) else s
+
+
+def _s_split_lines(s, args, line):
+    _arity("split_lines", args, line, 0)
+    return s.splitlines()
+
+
 STRING_METHODS = {
     "upper": _s_upper,
     "lower": _s_lower,
@@ -198,6 +230,11 @@ STRING_METHODS = {
     "is_upper": _s_is_upper,
     "is_lower": _s_is_lower,
     "is_space": _s_is_space,
+    "center": _s_center,
+    "zfill": _s_zfill,
+    "remove_prefix": _s_remove_prefix,
+    "remove_suffix": _s_remove_suffix,
+    "split_lines": _s_split_lines,
 }
 
 
@@ -376,6 +413,47 @@ def _l_reduce(lst, args, line):
     return acc
 
 
+def _l_chunk(lst, args, line):
+    _arity("chunk", args, line, 1)
+    n = args[0]
+    if not isinstance(n, int) or isinstance(n, bool) or n <= 0:
+        raise RuntimeErr("chunk() size must be a positive whole number", line)
+    return [lst[i : i + n] for i in range(0, len(lst), n)]
+
+
+def _l_group_by(lst, args, line):
+    from quill.interpreter import CURRENT_INTERPRETER
+
+    _arity("group_by", args, line, 1)
+    fn = args[0]
+    interp = CURRENT_INTERPRETER[0]
+    result = {}
+    for x in lst:
+        key = interp.call(fn, [x], line)
+        if not isinstance(key, (str, int, float, bool)):
+            raise RuntimeErr(
+                f"group_by() key function must return a string, number, or bool, not {type_name(key)}", line
+            )
+        result.setdefault(key, []).append(x)
+    return result
+
+
+def _l_flat_map(lst, args, line):
+    from quill.interpreter import CURRENT_INTERPRETER
+
+    _arity("flat_map", args, line, 1)
+    fn = args[0]
+    interp = CURRENT_INTERPRETER[0]
+    result = []
+    for x in lst:
+        mapped = interp.call(fn, [x], line)
+        if isinstance(mapped, list):
+            result.extend(mapped)
+        else:
+            result.append(mapped)
+    return result
+
+
 LIST_METHODS = {
     "push": _l_push,
     "pop": _l_pop,
@@ -395,6 +473,9 @@ LIST_METHODS = {
     "map": _l_map,
     "filter": _l_filter,
     "reduce": _l_reduce,
+    "chunk": _l_chunk,
+    "group_by": _l_group_by,
+    "flat_map": _l_flat_map,
 }
 
 

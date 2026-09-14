@@ -137,7 +137,17 @@
         <tr><td><code>.is_digit()</code> / <code>.is_alpha()</code> / <code>.is_alnum()</code></td><td>Whether every character is a digit / letter / letter-or-digit.</td></tr>
         <tr><td><code>.is_upper()</code> / <code>.is_lower()</code></td><td>Whether the string is entirely upper/lower case.</td></tr>
         <tr><td><code>.is_space()</code></td><td>Whether every character is whitespace.</td></tr>
+        <tr><td><code>.center(width, [ch])</code></td><td>Pads with <code>ch</code> (default a space) on both sides to reach <code>width</code>.</td></tr>
+        <tr><td><code>.zfill(width)</code></td><td>Zero-pads on the left to reach <code>width</code>, after any leading <code>-</code>/<code>+</code> sign.</td></tr>
+        <tr><td><code>.remove_prefix(s)</code> / <code>.remove_suffix(s)</code></td><td>Strips <code>s</code> from the start/end if it's there; otherwise returns the string unchanged.</td></tr>
+        <tr><td><code>.split_lines()</code></td><td>Splits on line breaks into a list, without the line-break characters.</td></tr>
       </table>
+      <p>
+        Quill also has a small regular-expression toolkit — <code>regex_match</code>,
+        <code>regex_find</code>, <code>regex_find_all</code>, <code>regex_replace</code>,
+        <code>regex_split</code>, and <code>regex_groups</code> — covered in
+        <a href="12-standard-library.html">Lesson 12</a>.
+      </p>
       <pre class="code-block"><span class="kw">let</span> s = <span class="str">"  Hello World  "</span>
 <span class="fnname">print</span>(s.trim().upper())        <span class="cmt"># "HELLO WORLD"</span>
 <span class="fnname">print</span>(s.trim().split(<span class="str">" "</span>))     <span class="cmt"># ["Hello", "World"]</span>

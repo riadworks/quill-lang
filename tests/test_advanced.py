@@ -734,6 +734,109 @@ def test_map_pop_missing_key_without_default_is_clean_error():
     assert "not found" in msg
 
 
+def test_regex_match_find_and_find_all():
+    out = run(
+        'print(regex_match("[0-9]+", "abc123"))\n'
+        'print(regex_match("^[0-9]+$", "abc123"))\n'
+        'print(regex_find("[0-9]+", "abc123def456"))\n'
+        'print(regex_find_all("[0-9]+", "abc123def456"))\n'
+    )
+    assert out.splitlines() == ["true", "false", "123", '["123", "456"]']
+
+
+def test_regex_replace_and_split():
+    out = run('print(regex_replace("[0-9]+", "abc123def456", "#"))\nprint(regex_split(",\\\\s*", "a, b,c"))\n')
+    assert out.splitlines() == ["abc#def#", '["a", "b", "c"]']
+
+
+def test_regex_groups_and_no_match():
+    out = run('print(regex_groups("(\\\\w+)@(\\\\w+)", "bob@example"))\nprint(regex_groups("[0-9]+", "abc"))\n')
+    assert out.splitlines() == ['["bob", "example"]', "nil"]
+
+
+def test_regex_invalid_pattern_is_a_clean_error():
+    msg = run_expect_error('regex_match("(", "x")\n')
+    assert "invalid regex pattern" in msg
+
+
+def test_time_and_sleep():
+    out = run("let t = time()\nprint(type(t))\nsleep(0)\nprint(time() >= t)\n")
+    assert out.splitlines() == ["number", "true"]
+
+
+def test_uuid_is_unique_and_well_formed():
+    out = run("let a = uuid()\nlet b = uuid()\nprint(a != b)\nprint(len(a))\n")
+    assert out.splitlines() == ["true", "36"]
+
+
+def test_base64_round_trip():
+    out = run('print(base64_decode(base64_encode("hello, quill")))\n')
+    assert out.strip() == "hello, quill"
+
+
+def test_filesystem_helpers(tmp_path):
+    target_dir = str(tmp_path / "sub").replace("\\", "\\\\")
+    target_file = str(tmp_path / "sub" / "a.txt").replace("\\", "\\\\")
+    out = run(
+        f'make_dir("{target_dir}")\n'
+        f'write_file("{target_file}", "hi")\n'
+        f'print(file_exists("{target_file}"))\n'
+        f'print(list_dir("{target_dir}"))\n'
+        f'delete_file("{target_file}")\n'
+        f'print(file_exists("{target_file}"))\n'
+        "print(type(cwd()))\n"
+    )
+    assert out.splitlines() == ["true", '["a.txt"]', "false", "string"]
+
+
+def test_path_join():
+    out = run('print(path_join(["a", "b", "c.txt"]))\n')
+    import os
+
+    assert out.strip() == os.path.join("a", "b", "c.txt")
+
+
+def test_more_math_functions():
+    out = run(
+        "print(log2(8))\n"
+        "print(log10(1000))\n"
+        "print(round(degrees(PI), 3))\n"
+        "print(round(radians(180), 5))\n"
+        "print(hypot(3, 4))\n"
+        "print(factorial(5))\n"
+    )
+    assert out.splitlines() == ["3", "3", "180", "3.14159", "5", "120"]
+
+
+def test_factorial_rejects_negative_and_non_integer():
+    assert "factorial" in run_expect_error("factorial(-1)\n")
+    assert "factorial" in run_expect_error("factorial(1.5)\n")
+
+
+def test_more_string_methods():
+    out = run(
+        'print("hi".center(6, "*"))\n'
+        'print("42".zfill(5))\n'
+        'print("prefix_value".remove_prefix("prefix_"))\n'
+        'print("value_suffix".remove_suffix("_suffix"))\n'
+        'print("a\\nb\\nc".split_lines())\n'
+    )
+    assert out.splitlines() == ["**hi**", "00042", "value", "value", '["a", "b", "c"]']
+
+
+def test_more_list_methods():
+    out = run(
+        "print([1, 2, 3, 4, 5].chunk(2))\n"
+        "print([1, 2, 3, 4, 5, 6].group_by(pull(x): return x % 2))\n"
+        "print([1, 2, 3].flat_map(pull(x): return [x, x * 10]))\n"
+    )
+    assert out.splitlines() == [
+        "[[1, 2], [3, 4], [5]]",
+        '{1: [1, 3, 5], 0: [2, 4, 6]}',
+        "[1, 10, 2, 20, 3, 30]",
+    ]
+
+
 def test_random_int_stays_in_range():
     out = run(
         "let ok = true\n"

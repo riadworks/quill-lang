@@ -87,7 +87,12 @@
         <tr><td><code>divmod(a, b)</code></td><td><code>[a // b, a % b]</code> as a two-element list, computed together.</td></tr>
         <tr><td><code>log(n)</code> / <code>log(n, base)</code></td><td>Natural log, or log to a given base.</td></tr>
         <tr><td><code>exp(n)</code></td><td><code>E</code> raised to the power <code>n</code>.</td></tr>
-        <tr><td><code>sin(n)</code> / <code>cos(n)</code> / <code>tan(n)</code></td><td>Trig functions, in radians.</td></tr>
+        <tr><td><code>sin(n)</code> / <code>cos(n)</code> / <code>tan(n)</code> / <code>atan(n)</code></td><td>Trig functions, in radians.</td></tr>
+        <tr><td><code>atan2(y, x)</code></td><td>Angle of the point <code>(x, y)</code>, handling all four quadrants correctly.</td></tr>
+        <tr><td><code>log2(n)</code> / <code>log10(n)</code></td><td>Base-2 / base-10 logarithm.</td></tr>
+        <tr><td><code>degrees(n)</code> / <code>radians(n)</code></td><td>Converts between radians and degrees.</td></tr>
+        <tr><td><code>hypot(x, y)</code></td><td>The hypotenuse of a right triangle with legs <code>x</code> and <code>y</code>.</td></tr>
+        <tr><td><code>factorial(n)</code></td><td><code>n!</code>, for a non-negative whole number.</td></tr>
         <tr><td><code>gcd(a, b)</code></td><td>Greatest common divisor.</td></tr>
         <tr><td><code>PI</code> / <code>E</code></td><td>The constants <code>3.141592653589793</code> and <code>2.718281828459045</code> (not functions — no parentheses).</td></tr>
       </table>
@@ -138,6 +143,11 @@
         <tr><td><code>read_file(path)</code></td><td>Returns the whole file as a string.</td></tr>
         <tr><td><code>write_file(path, content)</code></td><td>Overwrites (or creates) a file with <code>str(content)</code>.</td></tr>
         <tr><td><code>file_exists(path)</code></td><td>Boolean.</td></tr>
+        <tr><td><code>list_dir(path)</code></td><td>Sorted list of names in a directory.</td></tr>
+        <tr><td><code>make_dir(path)</code></td><td>Creates a directory, including any missing parent directories.</td></tr>
+        <tr><td><code>delete_file(path)</code></td><td>Removes a file.</td></tr>
+        <tr><td><code>path_join(parts)</code></td><td>Joins a list of path segments with the right separator for the OS. A list, not variadic arguments, since Quill functions don't have those.</td></tr>
+        <tr><td><code>cwd()</code></td><td>The current working directory.</td></tr>
       </table>
       <p>
         Because <code>input()</code> returns <code>""</code> forever once input runs out
@@ -198,6 +208,29 @@
           Lesson 6.
         </p>
       </div>
+
+      <h2>Regular expressions</h2>
+      <table class="ref">
+        <tr><th>Function</th><th>Does</th></tr>
+        <tr><td><code>regex_match(pattern, s)</code></td><td>Whether <code>pattern</code> matches anywhere in <code>s</code>.</td></tr>
+        <tr><td><code>regex_find(pattern, s)</code></td><td>The first match, or <code>nil</code>.</td></tr>
+        <tr><td><code>regex_find_all(pattern, s)</code></td><td>List of every non-overlapping match.</td></tr>
+        <tr><td><code>regex_replace(pattern, s, repl)</code></td><td>Every match replaced with <code>repl</code> (which can use <code>\1</code>-style backreferences).</td></tr>
+        <tr><td><code>regex_split(pattern, s)</code></td><td>Splits <code>s</code> wherever <code>pattern</code> matches.</td></tr>
+        <tr><td><code>regex_groups(pattern, s)</code></td><td>List of captured groups from the first match, or <code>nil</code> if there's no match.</td></tr>
+      </table>
+      <p>Patterns use Python's own regex syntax underneath. A bad pattern is a clean error, not a crash:</p>
+      <pre class="code-block"><span class="fnname">print</span>(regex_find_all(<span class="str">"[0-9]+"</span>, <span class="str">"order #123, qty 456"</span>))   <span class="cmt"># ["123", "456"]</span>
+<span class="fnname">print</span>(regex_groups(<span class="str">"(\\w+)@(\\w+)"</span>, <span class="str">"bob@example"</span>))       <span class="cmt"># ["bob", "example"]</span></pre>
+
+      <h2>Identifiers, time &amp; encoding</h2>
+      <table class="ref">
+        <tr><th>Function</th><th>Does</th></tr>
+        <tr><td><code>uuid()</code></td><td>A random UUID4 string.</td></tr>
+        <tr><td><code>time()</code></td><td>The current Unix timestamp.</td></tr>
+        <tr><td><code>sleep(seconds)</code></td><td>Pauses execution.</td></tr>
+        <tr><td><code>base64_encode(s)</code> / <code>base64_decode(s)</code></td><td>Text-safe encoding, round-trippable.</td></tr>
+      </table>
 
       <h2>Environment</h2>
       <table class="ref">

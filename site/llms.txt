@@ -28,7 +28,7 @@ This provides a `quill` command: run with no arguments for a REPL, or `quill scr
 - Operator overloading via dunder methods (`__add__`, `__eq__`, `__str__`, etc.)
 - List/map comprehensions and destructuring assignment
 - A built-in web server (`serve(port, handler)`) and an outbound HTTP client (`http_get`/`http_post`)
-- A standard library covering strings, lists, maps, JSON, SHA-256, salted PBKDF2 password hashing, randomness, file I/O, and Python-style top-level helpers (`map`/`filter`/`reduce`, `all`/`any`, `chr`/`ord`, `hex`/`oct`/`bin`, `pow`/`divmod`, `log`/`exp`/`sin`/`cos`/`tan`/`gcd`)
+- A standard library covering strings, lists, maps, JSON, SHA-256, salted PBKDF2 password hashing, regular expressions, UUIDs, base64, filesystem access, randomness, file I/O, and Python-style top-level helpers (`map`/`filter`/`reduce`, `all`/`any`, `chr`/`ord`, `hex`/`oct`/`bin`, `pow`/`divmod`, a full trig/log math set, `gcd`/`factorial`)
 
 ## What's not implemented
 

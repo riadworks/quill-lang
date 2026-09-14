@@ -191,13 +191,15 @@ Paths are resolved relative to the importing file.
   raises if missing) `.count(s)` `.repeat(n)` `.pad_start(width, [ch])`
   `.pad_end(width, [ch])` `.title()` `.capitalize()` `.swap_case()`
   `.reverse()` `.is_digit()` `.is_alpha()` `.is_alnum()` `.is_upper()`
-  `.is_lower()` `.is_space()`
+  `.is_lower()` `.is_space()` `.center(width, [ch])` `.zfill(width)`
+  `.remove_prefix(s)` `.remove_suffix(s)` `.split_lines()`
 - `true` / `false` / `nil`
 - Lists: `[1, 2, 3]`, indexed with `xs[0]`/`xs[-1]`, with methods:
   `.push(x)` `.pop()`/`.pop(i)` `.insert(i, x)` `.remove(x)` `.clear()`
   `.copy()` `.extend(other)` `.count(x)` `.unique()` `.flatten()` `.sort()`
   `.sort(key_fn)` `.sort(reverse)` `.reverse()` `.contains(x)` `.index_of(x)`
-  `.join(sep)` `.map(f)` `.filter(f)` `.reduce(f, init)` (`.sort()` and
+  `.join(sep)` `.map(f)` `.filter(f)` `.reduce(f, init)` `.flat_map(f)`
+  `.chunk(n)` `.group_by(f)` (`.sort()` and
   `.reverse()` return a new list rather than mutating, matching the
   standalone `sorted()`; `.sort()`'s extra argument can be a key function, a
   `true`/`false` for reverse order, or both, in either order)
@@ -223,8 +225,13 @@ Paths are resolved relative to the importing file.
 `json_decode`, `sha256`, `password_hash`, `password_verify`, `random`,
 `random_int`, `random_choice`, `shuffle`, `env_get`, `http_get`, `http_post`,
 `all`, `any`, `chr`, `ord`, `hex`, `oct`, `bin`, `pow`, `divmod`, `repr`,
-`log`, `exp`, `sin`, `cos`, `tan`, `gcd`, `map`, `filter`, `reduce`, plus
-the constants `PI` and `E`. (The older top-level `push`/`pop`/`keys`/etc.
+`log`, `exp`, `sin`, `cos`, `tan`, `atan`, `atan2`, `log2`, `log10`,
+`degrees`, `radians`, `hypot`, `factorial`, `gcd`, `map`, `filter`,
+`reduce`, `regex_match`, `regex_find`, `regex_find_all`, `regex_replace`,
+`regex_split`, `regex_groups`, `time`, `sleep`, `uuid`, `base64_encode`,
+`base64_decode`, `list_dir`, `make_dir`, `delete_file`, `path_join`,
+`cwd`, plus the constants `PI` and `E`. (The older top-level
+`push`/`pop`/`keys`/etc.
 and the newer `.push()`/`.pop()`/`.keys()` method forms both work and do the
 same thing — the methods are just nicer to chain.)
 
@@ -236,6 +243,20 @@ the key function, since one is a function and the other a bool). The
 standalone `map(fn, list)`/`filter(fn, list)`/`reduce(fn, list, init)`
 do the same thing as `.map()`/`.filter()`/`.reduce()`, just with Python's
 argument order (function first) instead of the method-call receiver.
+
+`regex_match(pattern, s)`, `regex_find(pattern, s)`,
+`regex_find_all(pattern, s)`, `regex_replace(pattern, s, repl)`,
+`regex_split(pattern, s)`, and `regex_groups(pattern, s)` wrap Python's own
+regular expression engine - a bad pattern raises a clean "invalid regex
+pattern: ..." error instead of an exception at all, let alone a raw one.
+`uuid()` returns a random UUID4 string, `time()` the current Unix
+timestamp, and `sleep(seconds)` pauses execution - the basics any real
+program eventually needs. `base64_encode`/`base64_decode` round out
+`sha256`/`password_hash` for moving data in and out of text-safe form.
+`list_dir(path)`, `make_dir(path)`, `delete_file(path)`, `path_join(parts)`
+(taking a list of segments, since there's no variadic arguments), and
+`cwd()` round out `read_file`/`write_file`/`file_exists` into full
+filesystem access.
 
 `password_hash(password)` / `password_verify(password, hash)` are for real
 user passwords: salted PBKDF2-HMAC-SHA256 (260,000 iterations) with a

@@ -559,6 +559,215 @@ def build_globals() -> Environment:
             acc = CURRENT_INTERPRETER[0].call(fn, [acc, x], line)
         return acc
 
+    def _compile_regex(pattern, line):
+        import re
+
+        try:
+            return re.compile(pattern)
+        except re.error as exc:
+            raise RuntimeErr(f"invalid regex pattern: {exc}", line)
+
+    def _require_two_strings(name, args, line):
+        pattern, text = args
+        if not isinstance(pattern, str) or not isinstance(text, str):
+            raise RuntimeErr(f"{name}() expects two strings", line)
+        return pattern, text
+
+    def b_regex_match(args, line):
+        _arity("regex_match", args, line, 2)
+        pattern, text = _require_two_strings("regex_match", args, line)
+        return _compile_regex(pattern, line).search(text) is not None
+
+    def b_regex_find(args, line):
+        _arity("regex_find", args, line, 2)
+        pattern, text = _require_two_strings("regex_find", args, line)
+        m = _compile_regex(pattern, line).search(text)
+        return m.group(0) if m else None
+
+    def b_regex_find_all(args, line):
+        _arity("regex_find_all", args, line, 2)
+        pattern, text = _require_two_strings("regex_find_all", args, line)
+        return [m.group(0) for m in _compile_regex(pattern, line).finditer(text)]
+
+    def b_regex_replace(args, line):
+        _arity("regex_replace", args, line, 3)
+        pattern, text = _require_two_strings("regex_replace", args[:2], line)
+        repl = args[2]
+        if not isinstance(repl, str):
+            raise RuntimeErr("regex_replace() replacement must be a string", line)
+        return _compile_regex(pattern, line).sub(repl, text)
+
+    def b_regex_split(args, line):
+        _arity("regex_split", args, line, 2)
+        pattern, text = _require_two_strings("regex_split", args, line)
+        return _compile_regex(pattern, line).split(text)
+
+    def b_regex_groups(args, line):
+        _arity("regex_groups", args, line, 2)
+        pattern, text = _require_two_strings("regex_groups", args, line)
+        m = _compile_regex(pattern, line).search(text)
+        return list(m.groups()) if m else None
+
+    def b_time(args, line):
+        import time as _time
+
+        _arity("time", args, line, 0)
+        return _time.time()
+
+    def b_sleep(args, line):
+        import time as _time
+
+        _arity("sleep", args, line, 1)
+        seconds = _require_number("sleep", args[0], line)
+        if seconds < 0:
+            raise RuntimeErr("sleep() duration must not be negative", line)
+        _time.sleep(seconds)
+        return None
+
+    def b_uuid(args, line):
+        import uuid as _uuid
+
+        _arity("uuid", args, line, 0)
+        return str(_uuid.uuid4())
+
+    def b_base64_encode(args, line):
+        import base64
+
+        _arity("base64_encode", args, line, 1)
+        text = args[0]
+        if not isinstance(text, str):
+            raise RuntimeErr(f"base64_encode() expects a string, got {type_name(text)}", line)
+        return base64.b64encode(text.encode("utf-8")).decode("ascii")
+
+    def b_base64_decode(args, line):
+        import base64
+        import binascii
+
+        _arity("base64_decode", args, line, 1)
+        text = args[0]
+        if not isinstance(text, str):
+            raise RuntimeErr(f"base64_decode() expects a string, got {type_name(text)}", line)
+        try:
+            return base64.b64decode(text, validate=True).decode("utf-8", errors="replace")
+        except (binascii.Error, ValueError):
+            raise RuntimeErr("invalid base64 input", line)
+
+    def b_list_dir(args, line):
+        import os
+
+        _arity("list_dir", args, line, 1)
+        path = args[0]
+        if not isinstance(path, str):
+            raise RuntimeErr(f"list_dir() expects a string path, got {type_name(path)}", line)
+        try:
+            return sorted(os.listdir(path))
+        except OSError as exc:
+            raise RuntimeErr(f"cannot list '{path}': {exc.strerror}", line)
+
+    def b_make_dir(args, line):
+        import os
+
+        _arity("make_dir", args, line, 1)
+        path = args[0]
+        if not isinstance(path, str):
+            raise RuntimeErr(f"make_dir() expects a string path, got {type_name(path)}", line)
+        try:
+            os.makedirs(path, exist_ok=True)
+        except OSError as exc:
+            raise RuntimeErr(f"cannot create '{path}': {exc.strerror}", line)
+        return None
+
+    def b_delete_file(args, line):
+        import os
+
+        _arity("delete_file", args, line, 1)
+        path = args[0]
+        if not isinstance(path, str):
+            raise RuntimeErr(f"delete_file() expects a string path, got {type_name(path)}", line)
+        try:
+            os.remove(path)
+        except OSError as exc:
+            raise RuntimeErr(f"cannot delete '{path}': {exc.strerror}", line)
+        return None
+
+    def b_path_join(args, line):
+        import os
+
+        _arity("path_join", args, line, 1)
+        parts = args[0]
+        if not isinstance(parts, list) or not all(isinstance(p, str) for p in parts):
+            raise RuntimeErr("path_join() expects a list of strings", line)
+        if not parts:
+            raise RuntimeErr("path_join() needs at least one path segment", line)
+        return os.path.join(*parts)
+
+    def b_cwd(args, line):
+        import os
+
+        _arity("cwd", args, line, 0)
+        return os.getcwd()
+
+    def b_atan(args, line):
+        import math
+
+        _arity("atan", args, line, 1)
+        return math.atan(_require_number("atan", args[0], line))
+
+    def b_atan2(args, line):
+        import math
+
+        _arity("atan2", args, line, 2)
+        y = _require_number("atan2", args[0], line)
+        x = _require_number("atan2", args[1], line)
+        return math.atan2(y, x)
+
+    def b_log2(args, line):
+        import math
+
+        _arity("log2", args, line, 1)
+        n = _require_number("log2", args[0], line)
+        if n <= 0:
+            raise RuntimeErr("log2() of a non-positive number", line)
+        return math.log2(n)
+
+    def b_log10(args, line):
+        import math
+
+        _arity("log10", args, line, 1)
+        n = _require_number("log10", args[0], line)
+        if n <= 0:
+            raise RuntimeErr("log10() of a non-positive number", line)
+        return math.log10(n)
+
+    def b_degrees(args, line):
+        import math
+
+        _arity("degrees", args, line, 1)
+        return math.degrees(_require_number("degrees", args[0], line))
+
+    def b_radians(args, line):
+        import math
+
+        _arity("radians", args, line, 1)
+        return math.radians(_require_number("radians", args[0], line))
+
+    def b_hypot(args, line):
+        import math
+
+        _arity("hypot", args, line, 2)
+        x = _require_number("hypot", args[0], line)
+        y = _require_number("hypot", args[1], line)
+        return math.hypot(x, y)
+
+    def b_factorial(args, line):
+        import math
+
+        _arity("factorial", args, line, 1)
+        n = _require_number("factorial", args[0], line)
+        if n < 0 or n != int(n):
+            raise RuntimeErr("factorial() expects a non-negative whole number", line)
+        return math.factorial(int(n))
+
     def b_env_get(args, line):
         import os
 
@@ -631,6 +840,30 @@ def build_globals() -> Environment:
     reg("map", b_map)
     reg("filter", b_filter)
     reg("reduce", b_reduce)
+    reg("regex_match", b_regex_match)
+    reg("regex_find", b_regex_find)
+    reg("regex_find_all", b_regex_find_all)
+    reg("regex_replace", b_regex_replace)
+    reg("regex_split", b_regex_split)
+    reg("regex_groups", b_regex_groups)
+    reg("time", b_time)
+    reg("sleep", b_sleep)
+    reg("uuid", b_uuid)
+    reg("base64_encode", b_base64_encode)
+    reg("base64_decode", b_base64_decode)
+    reg("list_dir", b_list_dir)
+    reg("make_dir", b_make_dir)
+    reg("delete_file", b_delete_file)
+    reg("path_join", b_path_join)
+    reg("cwd", b_cwd)
+    reg("atan", b_atan)
+    reg("atan2", b_atan2)
+    reg("log2", b_log2)
+    reg("log10", b_log10)
+    reg("degrees", b_degrees)
+    reg("radians", b_radians)
+    reg("hypot", b_hypot)
+    reg("factorial", b_factorial)
     env.declare("PI", 3.141592653589793)
     env.declare("E", 2.718281828459045)
 
