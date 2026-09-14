@@ -1,13 +1,34 @@
 [build-system]
-requires = ["setuptools>=68"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "quill-lang"
 version = "0.1.0"
 description = "Quill: a small, friendly, general-purpose scripting language."
+readme = "README.md"
 requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{name = "riadworks", email = "67joshua67@gmail.com"}]
+keywords = ["programming-language", "interpreter", "scripting-language"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Operating System :: OS Independent",
+    "Topic :: Software Development :: Interpreters",
+]
 dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/riadworks/quill-lang"
+Repository = "https://github.com/riadworks/quill-lang"
+Issues = "https://github.com/riadworks/quill-lang/issues"
 
 [project.optional-dependencies]
 dev = ["pytest>=8.0"]
