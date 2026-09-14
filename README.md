@@ -1,5 +1,7 @@
 # Quill
 
+[![CI](https://github.com/riadworks/quill-lang/actions/workflows/ci.yml/badge.svg)](https://github.com/riadworks/quill-lang/actions/workflows/ci.yml)
+
 A general-purpose scripting language with classes and inheritance, exceptions,
 closures, a module system, and a real standard library. Python-style
 indentation, dynamically typed, built in Python as a tree-walking
